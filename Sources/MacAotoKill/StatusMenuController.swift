@@ -10,6 +10,9 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     private let settingsStore = SettingsStore()
     private let eventLog = EventLog()
     private var settingsWindowController: SettingsWindowController?
+    private var updateCheckTask: Task<Void, Never>?
+    private var isCheckingForUpdates = false
+    private var isAutomaticUpdateCheckScheduled = false
 
     private lazy var processMonitor = ProcessMonitor(
         whitelistStore: whitelistStore,
@@ -37,6 +40,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     )
     private var lastAutomaticReleaseAt: Date?
     private let automaticReleaseCooldown: TimeInterval = 60
+    private let automaticUpdateCheckInterval: TimeInterval = 24 * 60 * 60
 
     private var localizer: Localizer {
         Localizer(languageCode: settingsStore.languageCode)
@@ -49,11 +53,14 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         startTimer()
         refreshSnapshot()
         eventLog.append(localizer.t("event.started"))
+        scheduleAutomaticUpdateCheckIfNeeded()
     }
 
     func stop() {
         refreshTimer?.invalidate()
         refreshTimer = nil
+        updateCheckTask?.cancel()
+        updateCheckTask = nil
         foregroundTracker.stop()
     }
 
@@ -144,6 +151,16 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         settingsItem.target = self
         settingsItem.image = symbolMenuIcon("gearshape")
         menu.addItem(settingsItem)
+
+        let updateItem = NSMenuItem(
+            title: isCheckingForUpdates ? localizer.t("menu.checkingForUpdates") : localizer.t("menu.checkForUpdates"),
+            action: #selector(checkForUpdates(_:)),
+            keyEquivalent: ""
+        )
+        updateItem.target = self
+        updateItem.isEnabled = !isCheckingForUpdates
+        updateItem.image = symbolMenuIcon("arrow.down.circle")
+        menu.addItem(updateItem)
 
         let releaseItem = NSMenuItem(
             title: localizer.t("menu.releaseNow"),
@@ -391,6 +408,111 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         refreshSnapshot(performAutomaticRelease: false)
     }
 
+    @objc private func checkForUpdates(_ sender: NSMenuItem) {
+        beginUpdateCheck(isUserInitiated: true)
+    }
+
+    private func scheduleAutomaticUpdateCheckIfNeeded() {
+        guard settingsStore.automaticUpdateReminderEnabled else { return }
+        guard AppIdentity.currentVersion != "0.0.0" else { return }
+        guard !isAutomaticUpdateCheckScheduled else { return }
+        if let lastUpdateCheckAt = settingsStore.lastUpdateCheckAt,
+           Date().timeIntervalSince(lastUpdateCheckAt) < automaticUpdateCheckInterval {
+            return
+        }
+
+        isAutomaticUpdateCheckScheduled = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+            self?.isAutomaticUpdateCheckScheduled = false
+            self?.beginUpdateCheck(isUserInitiated: false)
+        }
+    }
+
+    private func beginUpdateCheck(isUserInitiated: Bool) {
+        guard isUserInitiated || settingsStore.automaticUpdateReminderEnabled else { return }
+        guard !isCheckingForUpdates else { return }
+
+        isCheckingForUpdates = true
+        let checker = GitHubReleaseUpdateChecker(currentVersion: AppIdentity.currentVersion)
+        updateCheckTask?.cancel()
+        updateCheckTask = Task { @MainActor [weak self] in
+            do {
+                let result = try await checker.checkForUpdate()
+                self?.completeUpdateCheck(result, isUserInitiated: isUserInitiated)
+            } catch is CancellationError {
+                self?.isCheckingForUpdates = false
+            } catch {
+                self?.failUpdateCheck(error, isUserInitiated: isUserInitiated)
+            }
+        }
+    }
+
+    private func completeUpdateCheck(_ result: AppUpdateCheckResult, isUserInitiated: Bool) {
+        isCheckingForUpdates = false
+        updateCheckTask = nil
+        settingsStore.lastUpdateCheckAt = Date()
+
+        switch result {
+        case .upToDate(let currentVersion, _):
+            if isUserInitiated {
+                eventLog.append(localizer.t("event.updateNotAvailable", currentVersion))
+                presentUpToDateAlert(currentVersion: currentVersion)
+            }
+        case .updateAvailable(let info):
+            eventLog.append(localizer.t("event.updateAvailable", info.latestVersion, info.currentVersion))
+            guard isUserInitiated || settingsStore.lastPromptedUpdateVersion != info.latestVersion else {
+                return
+            }
+            settingsStore.lastPromptedUpdateVersion = info.latestVersion
+            presentUpdateAvailableAlert(info)
+        }
+    }
+
+    private func failUpdateCheck(_ error: Error, isUserInitiated: Bool) {
+        isCheckingForUpdates = false
+        updateCheckTask = nil
+        settingsStore.lastUpdateCheckAt = Date()
+        eventLog.append(localizer.t("event.updateCheckFailed", error.localizedDescription))
+
+        if isUserInitiated {
+            let alert = NSAlert()
+            alert.alertStyle = .warning
+            alert.messageText = localizer.t("update.checkFailedTitle")
+            alert.informativeText = localizer.t("update.checkFailedMessage", error.localizedDescription)
+            alert.addButton(withTitle: localizer.t("update.ok"))
+            NSApp.activate(ignoringOtherApps: true)
+            alert.runModal()
+        }
+    }
+
+    private func presentUpdateAvailableAlert(_ info: AppUpdateInfo) {
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = localizer.t("update.availableTitle", info.latestVersion)
+        alert.informativeText = localizer.t("update.availableMessage", info.currentVersion)
+        alert.addButton(withTitle: localizer.t("update.download"))
+        alert.addButton(withTitle: localizer.t("update.releasePage"))
+        alert.addButton(withTitle: localizer.t("update.later"))
+
+        NSApp.activate(ignoringOtherApps: true)
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            NSWorkspace.shared.open(info.downloadURL)
+        } else if response == .alertSecondButtonReturn {
+            NSWorkspace.shared.open(info.releasePageURL)
+        }
+    }
+
+    private func presentUpToDateAlert(currentVersion: String) {
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = localizer.t("update.upToDateTitle")
+        alert.informativeText = localizer.t("update.upToDateMessage", currentVersion)
+        alert.addButton(withTitle: localizer.t("update.ok"))
+        NSApp.activate(ignoringOtherApps: true)
+        alert.runModal()
+    }
+
     @objc private func openSettings(_ sender: NSMenuItem) {
         if settingsWindowController == nil {
             settingsWindowController = SettingsWindowController(
@@ -400,6 +522,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
                 onChange: { [weak self] in
                     self?.refreshSnapshot(performAutomaticRelease: true)
                     guard let self else { return }
+                    self.scheduleAutomaticUpdateCheckIfNeeded()
                     self.eventLog.append(self.localizer.t("event.settingsUpdated"))
                 },
                 onWhitelistAdded: { [weak self] bundleID in

@@ -112,6 +112,7 @@ private final class SettingsViewModel: ObservableObject {
     @Published var swapLimitEnabled: Bool
     @Published var swapLimitGB: Double
     @Published var minimumBackgroundMinutes: Double
+    @Published var automaticUpdateReminderEnabled: Bool
     @Published var appIdleTimeItems: [IdleTimeAppInfo]
     @Published var whitelistItems: [WhitelistAppInfo]
     @Published var newIdleTimeBundleID = ""
@@ -156,6 +157,7 @@ private final class SettingsViewModel: ObservableObject {
         self.swapLimitEnabled = settingsStore.swapLimitEnabled
         self.swapLimitGB = Double(settingsStore.swapLimitBytes) / Double(1024 * 1024 * 1024)
         self.minimumBackgroundMinutes = settingsStore.minimumBackgroundDuration / 60
+        self.automaticUpdateReminderEnabled = settingsStore.automaticUpdateReminderEnabled
         let initialIdleTimeBundleIDs = settingsStore.minimumBackgroundDurationsByBundleID.keys.sorted()
         self.idleTimeBundleIDs = initialIdleTimeBundleIDs
         self.appIdleTimeItems = Self.makeIdleTimeItems(from: initialIdleTimeBundleIDs, store: whitelistStore)
@@ -170,6 +172,7 @@ private final class SettingsViewModel: ObservableObject {
         swapLimitEnabled = settingsStore.swapLimitEnabled
         swapLimitGB = Double(settingsStore.swapLimitBytes) / Double(1024 * 1024 * 1024)
         minimumBackgroundMinutes = settingsStore.minimumBackgroundDuration / 60
+        automaticUpdateReminderEnabled = settingsStore.automaticUpdateReminderEnabled
         reloadIdleTimeItems()
         reloadWhitelist()
     }
@@ -185,6 +188,7 @@ private final class SettingsViewModel: ObservableObject {
         let swapLimitBytes = UInt64(swapLimitGB * Double(1024 * 1024 * 1024))
         settingsStore.swapLimitBytes = max(MemoryPolicyDefaults.minimumSwapLimitBytes, swapLimitBytes)
         settingsStore.minimumBackgroundDuration = minimumBackgroundMinutes * 60
+        settingsStore.automaticUpdateReminderEnabled = automaticUpdateReminderEnabled
         onChange()
     }
 
@@ -516,6 +520,7 @@ private struct SettingsView: View {
                 appIdleTimeSection
                 whitelistSection
                 languageSection
+                updateSection
                 logSection
                 footer
             }
@@ -540,6 +545,9 @@ private struct SettingsView: View {
             viewModel.save()
         }
         .onChange(of: viewModel.minimumBackgroundMinutes) { _ in
+            viewModel.save()
+        }
+        .onChange(of: viewModel.automaticUpdateReminderEnabled) { _ in
             viewModel.save()
         }
         .alert(localizer.t("settings.resetConfirmTitle"), isPresented: $viewModel.isResetConfirmationPresented) {
@@ -727,6 +735,26 @@ private struct SettingsView: View {
                 Spacer()
             }
             .padding(.vertical, 16)
+        }
+    }
+
+    private var updateSection: some View {
+        settingsPanel(title: localizer.t("settings.updates"), systemImage: "arrow.down.circle", color: Color(nsColor: .systemIndigo)) {
+            VStack(spacing: 0) {
+                toggleRow(
+                    title: localizer.t("settings.automaticUpdateReminder"),
+                    isOn: $viewModel.automaticUpdateReminderEnabled
+                )
+                Divider()
+                    .padding(.leading, 176)
+                Text(localizer.t("settings.automaticUpdateReminderHint"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 176)
+                    .padding(.vertical, 12)
+            }
         }
     }
 

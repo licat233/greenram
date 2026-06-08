@@ -4,6 +4,13 @@
 
 All notable GreenRAM release changes are recorded here.
 
+## v0.1.9 - 2026-06-08
+
+- Added GitHub Releases update checks with a manual menu action.
+- Added automatic update reminders, enabled by default and shown at most once per new version.
+- Added a Settings toggle for automatic update reminders.
+- Open the preferred release asset through the system, using the DMG when available.
+
 ## v0.1.8 - 2026-06-08
 
 - Updated cleanup policy: Auto-Quit Apps only wait for their non-frontmost time; ordinary non-whitelisted apps also require RAM or Swap limits to be exceeded; whitelisted apps are never quit.

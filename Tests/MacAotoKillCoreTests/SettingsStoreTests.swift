@@ -14,6 +14,7 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(store.swapLimitBytes, MemoryPolicyDefaults.swapLimitBytes)
         XCTAssertEqual(store.minimumBackgroundDuration, MemoryPolicyDefaults.minimumBackgroundDuration)
         XCTAssertEqual(store.maxAppsPerSweep, MemoryPolicyDefaults.maxAppsPerSweep)
+        XCTAssertTrue(store.automaticUpdateReminderEnabled)
     }
 
     func testSwapLimitClampsToMinimum() {
@@ -60,5 +61,28 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(configuration.ramLimitPercent, MemoryPolicyDefaults.ramLimitPercent)
         XCTAssertEqual(configuration.swapLimitEnabled, MemoryPolicyDefaults.swapLimitEnabled)
         XCTAssertEqual(configuration.swapLimitBytes, MemoryPolicyDefaults.swapLimitBytes)
+    }
+
+    func testUpdateCheckStatePersists() {
+        let suiteName = "milu.greenram.tests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let store = SettingsStore(defaults: defaults)
+        let date = Date(timeIntervalSince1970: 1_717_824_000)
+
+        store.lastUpdateCheckAt = date
+        store.lastPromptedUpdateVersion = "v0.1.9"
+        store.automaticUpdateReminderEnabled = false
+
+        XCTAssertEqual(store.lastUpdateCheckAt, date)
+        XCTAssertEqual(store.lastPromptedUpdateVersion, "v0.1.9")
+        XCTAssertFalse(store.automaticUpdateReminderEnabled)
+
+        store.lastUpdateCheckAt = nil
+        store.lastPromptedUpdateVersion = " "
+
+        XCTAssertNil(store.lastUpdateCheckAt)
+        XCTAssertNil(store.lastPromptedUpdateVersion)
     }
 }

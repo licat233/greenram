@@ -10,6 +10,9 @@ public final class SettingsStore {
     private let minimumBackgroundDurationsByBundleIDKey = "minimumBackgroundDurationsByBundleID"
     private let maxAppsPerSweepKey = "maxAppsPerSweep"
     private let languageCodeKey = "languageCode"
+    private let lastUpdateCheckAtKey = "lastUpdateCheckAt"
+    private let lastPromptedUpdateVersionKey = "lastPromptedUpdateVersion"
+    private let automaticUpdateReminderEnabledKey = "automaticUpdateReminderEnabled"
 
     public convenience init() {
         self.init(defaults: AppDefaults.make())
@@ -114,6 +117,46 @@ public final class SettingsStore {
         }
         set {
             defaults.set(AppLanguage.from(storageCode: newValue).storageCode, forKey: languageCodeKey)
+        }
+    }
+
+    public var lastUpdateCheckAt: Date? {
+        get { defaults.object(forKey: lastUpdateCheckAtKey) as? Date }
+        set {
+            if let newValue {
+                defaults.set(newValue, forKey: lastUpdateCheckAtKey)
+            } else {
+                defaults.removeObject(forKey: lastUpdateCheckAtKey)
+            }
+        }
+    }
+
+    public var lastPromptedUpdateVersion: String? {
+        get {
+            guard let value = defaults.string(forKey: lastPromptedUpdateVersionKey) else {
+                return nil
+            }
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        set {
+            if let newValue, !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                defaults.set(newValue, forKey: lastPromptedUpdateVersionKey)
+            } else {
+                defaults.removeObject(forKey: lastPromptedUpdateVersionKey)
+            }
+        }
+    }
+
+    public var automaticUpdateReminderEnabled: Bool {
+        get {
+            guard defaults.object(forKey: automaticUpdateReminderEnabledKey) != nil else {
+                return true
+            }
+            return defaults.bool(forKey: automaticUpdateReminderEnabledKey)
+        }
+        set {
+            defaults.set(newValue, forKey: automaticUpdateReminderEnabledKey)
         }
     }
 

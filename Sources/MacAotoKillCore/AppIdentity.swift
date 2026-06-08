@@ -3,10 +3,17 @@ import Foundation
 public enum AppIdentity {
     public static let name = "GreenRAM"
     public static let bundleIdentifier = "milu.greenram"
+    public static let releaseRepositoryOwner = "lwj1994"
+    public static let releaseRepositoryName = "greenram"
     public static let legacyBundleIdentifiers = [
         "dev.dontbesilent.GreenRAM",
         "dev.dontbesilent.MacAotoKill"
     ]
+
+    public static var currentVersion: String {
+        (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String)
+            ?? "0.0.0"
+    }
 }
 
 public enum AppDefaults {

@@ -247,6 +247,22 @@ public struct Localizer: Equatable {
             .de: "Einstellungen...",
             .fr: "Réglages..."
         ],
+        "menu.checkForUpdates": [
+            .en: "Check for Updates...",
+            .zhHans: "检查更新...",
+            .zhHant: "檢查更新...",
+            .ja: "アップデートを確認...",
+            .de: "Nach Updates suchen...",
+            .fr: "Rechercher des mises à jour..."
+        ],
+        "menu.checkingForUpdates": [
+            .en: "Checking for Updates...",
+            .zhHans: "正在检查更新...",
+            .zhHant: "正在檢查更新...",
+            .ja: "アップデートを確認中...",
+            .de: "Updates werden gesucht...",
+            .fr: "Recherche de mises à jour..."
+        ],
         "menu.releaseNow": [
             .en: "Clean Apps Now",
             .zhHans: "立即清理可清理 App",
@@ -406,6 +422,110 @@ public struct Localizer: Equatable {
             .ja: "GreenRAM 設定",
             .de: "GreenRAM Einstellungen",
             .fr: "Réglages GreenRAM"
+        ],
+        "update.availableTitle": [
+            .en: "GreenRAM %@ is available",
+            .zhHans: "GreenRAM %@ 可用",
+            .zhHant: "GreenRAM %@ 可用",
+            .ja: "GreenRAM %@ を利用できます",
+            .de: "GreenRAM %@ ist verfügbar",
+            .fr: "GreenRAM %@ est disponible"
+        ],
+        "update.availableMessage": [
+            .en: "You are using %@. Download the latest release from GitHub.",
+            .zhHans: "当前版本是 %@。可以从 GitHub 下载最新版本。",
+            .zhHant: "目前版本是 %@。可以從 GitHub 下載最新版本。",
+            .ja: "現在のバージョンは %@ です。GitHub から最新版をダウンロードできます。",
+            .de: "Aktuelle Version: %@. Die neueste Version kann von GitHub geladen werden.",
+            .fr: "Version actuelle : %@. La dernière version peut être téléchargée depuis GitHub."
+        ],
+        "update.download": [
+            .en: "Download",
+            .zhHans: "下载",
+            .zhHant: "下載",
+            .ja: "ダウンロード",
+            .de: "Laden",
+            .fr: "Télécharger"
+        ],
+        "update.releasePage": [
+            .en: "Release Page",
+            .zhHans: "发布页",
+            .zhHant: "發布頁",
+            .ja: "リリースページ",
+            .de: "Release-Seite",
+            .fr: "Page de version"
+        ],
+        "update.later": [
+            .en: "Later",
+            .zhHans: "稍后",
+            .zhHant: "稍後",
+            .ja: "あとで",
+            .de: "Später",
+            .fr: "Plus tard"
+        ],
+        "update.upToDateTitle": [
+            .en: "GreenRAM is up to date",
+            .zhHans: "GreenRAM 已是最新版本",
+            .zhHant: "GreenRAM 已是最新版本",
+            .ja: "GreenRAM は最新です",
+            .de: "GreenRAM ist aktuell",
+            .fr: "GreenRAM est à jour"
+        ],
+        "update.upToDateMessage": [
+            .en: "Current version: %@.",
+            .zhHans: "当前版本：%@。",
+            .zhHant: "目前版本：%@。",
+            .ja: "現在のバージョン：%@。",
+            .de: "Aktuelle Version: %@.",
+            .fr: "Version actuelle : %@."
+        ],
+        "update.checkFailedTitle": [
+            .en: "Update check failed",
+            .zhHans: "检查更新失败",
+            .zhHant: "檢查更新失敗",
+            .ja: "アップデート確認に失敗しました",
+            .de: "Update-Prüfung fehlgeschlagen",
+            .fr: "Échec de la recherche de mise à jour"
+        ],
+        "update.checkFailedMessage": [
+            .en: "%@",
+            .zhHans: "%@",
+            .zhHant: "%@",
+            .ja: "%@",
+            .de: "%@",
+            .fr: "%@"
+        ],
+        "update.ok": [
+            .en: "OK",
+            .zhHans: "好",
+            .zhHant: "好",
+            .ja: "OK",
+            .de: "OK",
+            .fr: "OK"
+        ],
+        "settings.updates": [
+            .en: "Updates",
+            .zhHans: "更新",
+            .zhHant: "更新",
+            .ja: "アップデート",
+            .de: "Updates",
+            .fr: "Mises à jour"
+        ],
+        "settings.automaticUpdateReminder": [
+            .en: "Automatic update reminders",
+            .zhHans: "自动更新提醒",
+            .zhHant: "自動更新提醒",
+            .ja: "アップデート通知",
+            .de: "Automatische Update-Hinweise",
+            .fr: "Rappels automatiques de mise à jour"
+        ],
+        "settings.automaticUpdateReminderHint": [
+            .en: "GreenRAM checks GitHub in the background at most once per day and automatically prompts only once for each new version.",
+            .zhHans: "GreenRAM 每天最多在后台检查一次 GitHub；每个新版本只会自动提醒一次。",
+            .zhHant: "GreenRAM 每天最多在背景檢查一次 GitHub；每個新版本只會自動提醒一次。",
+            .ja: "GreenRAM はバックグラウンドで GitHub を 1 日 1 回まで確認し、新しい各バージョンにつき自動通知は 1 回だけ行います。",
+            .de: "GreenRAM prüft GitHub im Hintergrund höchstens einmal pro Tag und zeigt pro neuer Version nur einmal automatisch einen Hinweis.",
+            .fr: "GreenRAM vérifie GitHub en arrière-plan au plus une fois par jour et n'affiche qu'un seul rappel automatique par nouvelle version."
         ],
         "settings.language": [
             .en: "Language",
@@ -750,6 +870,30 @@ public struct Localizer: Equatable {
             .ja: "GreenRAM を起動しました。",
             .de: "GreenRAM wurde gestartet.",
             .fr: "GreenRAM a démarré."
+        ],
+        "event.updateAvailable": [
+            .en: "Update available: %@ (current %@).",
+            .zhHans: "发现新版本：%@（当前 %@）。",
+            .zhHant: "發現新版本：%@（目前 %@）。",
+            .ja: "アップデートがあります：%@（現在 %@）。",
+            .de: "Update verfügbar: %@ (aktuell %@).",
+            .fr: "Mise à jour disponible : %@ (actuelle %@)."
+        ],
+        "event.updateNotAvailable": [
+            .en: "No update available. Current version: %@.",
+            .zhHans: "没有可用更新。当前版本：%@。",
+            .zhHant: "沒有可用更新。目前版本：%@。",
+            .ja: "利用可能なアップデートはありません。現在のバージョン：%@。",
+            .de: "Kein Update verfügbar. Aktuelle Version: %@.",
+            .fr: "Aucune mise à jour disponible. Version actuelle : %@."
+        ],
+        "event.updateCheckFailed": [
+            .en: "Update check failed: %@.",
+            .zhHans: "检查更新失败：%@。",
+            .zhHant: "檢查更新失敗：%@。",
+            .ja: "アップデート確認に失敗しました：%@。",
+            .de: "Update-Prüfung fehlgeschlagen: %@.",
+            .fr: "Échec de la recherche de mise à jour : %@."
         ],
         "event.memoryPressureChanged": [
             .en: "Memory pressure changed to %@.",
