@@ -4,7 +4,13 @@ GreenRAM is a macOS menu bar app that watches RAM and Swap usage, then force qui
 
 It is built for a simple case: keep the frontmost app responsive when memory pressure gets too high.
 
-## Screenshot
+## Screenshots
+
+### Menu
+
+![GreenRAM menu](docs/screenshots/menu.png)
+
+### Settings
 
 ![GreenRAM settings window](docs/screenshots/settings.png)
 
