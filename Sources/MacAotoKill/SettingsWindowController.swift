@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import MacAotoKillCore
+import UniformTypeIdentifiers
 
 final class SettingsWindowController: NSWindowController {
     private let viewModel: SettingsViewModel
@@ -69,6 +70,17 @@ final class SettingsWindowController: NSWindowController {
     }
 }
 
+private struct WhitelistAppInfo: Identifiable {
+    let bundleID: String
+    let displayName: String
+    let icon: NSImage
+    let isDefaultSeed: Bool
+
+    var id: String {
+        bundleID
+    }
+}
+
 private final class SettingsViewModel: ObservableObject {
     private let settingsStore: SettingsStore
     private let whitelistStore: WhitelistStore
@@ -84,9 +96,10 @@ private final class SettingsViewModel: ObservableObject {
     @Published var swapLimitEnabled: Bool
     @Published var swapLimitGB: Double
     @Published var minimumBackgroundMinutes: Double
-    @Published var whitelistBundleIDs: [String]
+    @Published var whitelistItems: [WhitelistAppInfo]
     @Published var newWhitelistBundleID = ""
     @Published var isResetConfirmationPresented = false
+    private var whitelistBundleIDs: [String]
 
     var localizer: Localizer {
         Localizer(languageCode: languageCode)
@@ -119,7 +132,9 @@ private final class SettingsViewModel: ObservableObject {
         self.swapLimitEnabled = settingsStore.swapLimitEnabled
         self.swapLimitGB = Double(settingsStore.swapLimitBytes) / Double(1024 * 1024 * 1024)
         self.minimumBackgroundMinutes = settingsStore.minimumBackgroundDuration / 60
-        self.whitelistBundleIDs = whitelistStore.allBundleIDs.sorted()
+        let initialBundleIDs = whitelistStore.allBundleIDs.sorted()
+        self.whitelistBundleIDs = initialBundleIDs
+        self.whitelistItems = Self.makeWhitelistItems(from: initialBundleIDs, store: whitelistStore)
     }
 
     func load() {
@@ -151,10 +166,6 @@ private final class SettingsViewModel: ObservableObject {
         onChange()
     }
 
-    func isDefaultWhitelistSeed(_ bundleID: String) -> Bool {
-        whitelistStore.isDefaultProtected(bundleID)
-    }
-
     func addWhitelistBundleID() {
         let bundleID = normalizedNewWhitelistBundleID
         guard canAddWhitelistBundleID else { return }
@@ -163,6 +174,27 @@ private final class SettingsViewModel: ObservableObject {
         newWhitelistBundleID = ""
         reloadWhitelist()
         onWhitelistAdded(bundleID)
+    }
+
+    func chooseWhitelistApplications() {
+        let panel = NSOpenPanel()
+        panel.title = localizer.t("settings.chooseApp")
+        panel.prompt = localizer.t("settings.addBundleID")
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = true
+        panel.treatsFilePackagesAsDirectories = false
+
+        let applicationsURL = URL(fileURLWithPath: "/Applications", isDirectory: true)
+        if FileManager.default.fileExists(atPath: applicationsURL.path) {
+            panel.directoryURL = applicationsURL
+        }
+        if let appBundleType = UTType("com.apple.application-bundle") {
+            panel.allowedContentTypes = [appBundleType]
+        }
+
+        guard panel.runModal() == .OK else { return }
+        addWhitelistApplications(panel.urls)
     }
 
     func removeWhitelistBundleID(_ bundleID: String) {
@@ -180,7 +212,127 @@ private final class SettingsViewModel: ObservableObject {
     }
 
     private func reloadWhitelist() {
-        whitelistBundleIDs = whitelistStore.allBundleIDs.sorted()
+        let bundleIDs = whitelistStore.allBundleIDs.sorted()
+        whitelistBundleIDs = bundleIDs
+        whitelistItems = Self.makeWhitelistItems(from: bundleIDs, store: whitelistStore)
+    }
+
+    private func addWhitelistApplications(_ urls: [URL]) {
+        for url in urls {
+            guard
+                let appURL = Self.existingApplicationURL(from: url),
+                let bundle = Bundle(url: appURL),
+                let bundleID = Self.nonEmpty(bundle.bundleIdentifier)
+            else {
+                continue
+            }
+
+            let wasAlreadyWhitelisted = whitelistStore.contains(bundleID)
+            whitelistStore.add(bundleID)
+            whitelistStore.setAppPath(appURL.path, for: bundleID)
+            if !wasAlreadyWhitelisted {
+                onWhitelistAdded(bundleID)
+            }
+        }
+        reloadWhitelist()
+    }
+
+    private static func makeWhitelistItems(from bundleIDs: [String], store: WhitelistStore) -> [WhitelistAppInfo] {
+        bundleIDs
+            .map { makeWhitelistItem(bundleID: $0, store: store) }
+            .sorted { lhs, rhs in
+                let nameOrder = lhs.displayName.localizedCaseInsensitiveCompare(rhs.displayName)
+                if nameOrder == .orderedSame {
+                    return lhs.bundleID.localizedCaseInsensitiveCompare(rhs.bundleID) == .orderedAscending
+                }
+                return nameOrder == .orderedAscending
+            }
+    }
+
+    private static func makeWhitelistItem(bundleID: String, store: WhitelistStore) -> WhitelistAppInfo {
+        let cachedURL = store.appPath(for: bundleID).map { URL(fileURLWithPath: $0) }
+        let appURL = cachedURL.flatMap(existingApplicationURL(from:))
+            ?? NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
+        let runningApp = NSWorkspace.shared.runningApplications.first { $0.bundleIdentifier == bundleID }
+        let bundle = appURL.flatMap(Bundle.init(url:))
+        let displayName = nonEmpty(runningApp?.localizedName)
+            ?? bundleDisplayName(bundle)
+            ?? nonEmpty(appURL?.deletingPathExtension().lastPathComponent)
+            ?? systemDisplayNameOverride(for: bundleID)
+            ?? fallbackDisplayName(for: bundleID)
+        let icon = appIcon(runningApp: runningApp, appURL: appURL, bundleID: bundleID)
+
+        return WhitelistAppInfo(
+            bundleID: bundleID,
+            displayName: displayName,
+            icon: icon,
+            isDefaultSeed: store.isDefaultProtected(bundleID)
+        )
+    }
+
+    private static func existingApplicationURL(from url: URL) -> URL? {
+        let standardizedURL = url.standardizedFileURL
+        var isDirectory: ObjCBool = false
+        guard
+            FileManager.default.fileExists(atPath: standardizedURL.path, isDirectory: &isDirectory),
+            isDirectory.boolValue,
+            standardizedURL.pathExtension.lowercased() == "app"
+        else {
+            return nil
+        }
+        return standardizedURL
+    }
+
+    private static func bundleDisplayName(_ bundle: Bundle?) -> String? {
+        nonEmpty(bundle?.localizedInfoDictionary?["CFBundleDisplayName"] as? String)
+            ?? nonEmpty(bundle?.localizedInfoDictionary?["CFBundleName"] as? String)
+            ?? nonEmpty(bundle?.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
+            ?? nonEmpty(bundle?.object(forInfoDictionaryKey: "CFBundleName") as? String)
+    }
+
+    private static func appIcon(runningApp: NSRunningApplication?, appURL: URL?, bundleID: String) -> NSImage {
+        if let runningIcon = runningApp?.icon {
+            return scaledIcon(runningIcon)
+        }
+        if let appURL {
+            return scaledIcon(NSWorkspace.shared.icon(forFile: appURL.path))
+        }
+        if bundleID == "com.apple.WindowServer",
+           let displayIcon = NSImage(systemSymbolName: "display", accessibilityDescription: nil) {
+            displayIcon.isTemplate = true
+            return scaledIcon(displayIcon)
+        }
+        if let appBundleType = UTType("com.apple.application-bundle") {
+            return scaledIcon(NSWorkspace.shared.icon(for: appBundleType))
+        }
+        return scaledIcon(NSImage(systemSymbolName: "app", accessibilityDescription: nil) ?? NSImage())
+    }
+
+    private static func scaledIcon(_ sourceImage: NSImage) -> NSImage {
+        let image = (sourceImage.copy() as? NSImage) ?? sourceImage
+        image.size = NSSize(width: 34, height: 34)
+        return image
+    }
+
+    private static func systemDisplayNameOverride(for bundleID: String) -> String? {
+        [
+            "com.apple.finder": "Finder",
+            "com.apple.dock": "Dock",
+            "com.apple.WindowServer": "WindowServer",
+            "com.apple.systempreferences": "System Preferences",
+            "com.apple.SystemSettings": "System Settings"
+        ][bundleID]
+    }
+
+    private static func fallbackDisplayName(for bundleID: String) -> String {
+        nonEmpty(bundleID.split(separator: ".").last.map(String.init)) ?? bundleID
+    }
+
+    private static func nonEmpty(_ value: String?) -> String? {
+        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
+            return nil
+        }
+        return trimmed
     }
 }
 
@@ -356,6 +508,12 @@ private struct SettingsView: View {
         settingsPanel(title: localizer.t("menu.whitelist"), systemImage: "checkmark.shield", color: Color(nsColor: .systemTeal)) {
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
+                    Button {
+                        viewModel.chooseWhitelistApplications()
+                    } label: {
+                        Label(localizer.t("settings.chooseApp"), systemImage: "folder")
+                    }
+
                     TextField(localizer.t("settings.bundleIDPlaceholder"), text: $viewModel.newWhitelistBundleID)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(.body, design: .monospaced))
@@ -370,21 +528,24 @@ private struct SettingsView: View {
                     }
                     .disabled(!viewModel.canAddWhitelistBundleID)
                 }
+                .buttonStyle(.bordered)
                 .padding(.vertical, 14)
 
                 Divider()
 
-                if viewModel.whitelistBundleIDs.isEmpty {
+                if viewModel.whitelistItems.isEmpty {
                     Text(localizer.t("menu.noWhitelistItems"))
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 14)
                 } else {
                     VStack(spacing: 0) {
-                        ForEach(viewModel.whitelistBundleIDs, id: \.self) { bundleID in
-                            whitelistRow(bundleID)
-                            if bundleID != viewModel.whitelistBundleIDs.last {
+                        ForEach(viewModel.whitelistItems.indices, id: \.self) { index in
+                            let item = viewModel.whitelistItems[index]
+                            whitelistRow(item)
+                            if index < viewModel.whitelistItems.count - 1 {
                                 Divider()
+                                    .padding(.leading, 52)
                             }
                         }
                     }
@@ -582,32 +743,46 @@ private struct SettingsView: View {
         .padding(.vertical, 16)
     }
 
-    private func whitelistRow(_ bundleID: String) -> some View {
-        HStack(spacing: 12) {
+    private func whitelistRow(_ item: WhitelistAppInfo) -> some View {
+        HStack(spacing: 14) {
+            Image(nsImage: item.icon)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 34, height: 34)
+                .clipShape(RoundedRectangle(cornerRadius: 7))
+
             VStack(alignment: .leading, spacing: 3) {
-                Text(bundleID)
-                    .font(.system(.body, design: .monospaced))
+                HStack(spacing: 8) {
+                    Text(item.displayName)
+                        .font(.body.weight(.semibold))
+                        .lineLimit(1)
+
+                    if item.isDefaultSeed {
+                        Text(localizer.t("settings.defaultWhitelistSeed"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+
+                Text(item.bundleID)
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
-
-                if viewModel.isDefaultWhitelistSeed(bundleID) {
-                    Text(localizer.t("settings.defaultWhitelistSeed"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
             }
 
             Spacer()
 
             Button {
-                viewModel.removeWhitelistBundleID(bundleID)
+                viewModel.removeWhitelistBundleID(item.bundleID)
             } label: {
                 Image(systemName: "trash")
             }
             .buttonStyle(.borderless)
-            .help(localizer.t("menu.removeBundleID", bundleID))
+            .help(localizer.t("menu.removeBundleID", item.bundleID))
         }
-        .padding(.vertical, 10)
+        .padding(.vertical, 11)
     }
 
     private func statusColor(_ isExceeded: Bool) -> Color {

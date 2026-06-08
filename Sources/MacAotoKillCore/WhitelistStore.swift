@@ -12,6 +12,7 @@ public final class WhitelistStore {
     private let defaults: UserDefaults
     private let whitelistKey = "whitelistBundleIDs"
     private let legacyUserWhitelistKey = "userWhitelistBundleIDs"
+    private let appPathsKey = "whitelistAppPathsByBundleID"
 
     public convenience init() {
         self.init(defaults: AppDefaults.make())
@@ -76,5 +77,20 @@ public final class WhitelistStore {
         var ids = bundleIDs
         ids.remove(bundleID)
         bundleIDs = ids
+        setAppPath(nil, for: bundleID)
+    }
+
+    public func appPath(for bundleID: String) -> String? {
+        appPaths[bundleID]
+    }
+
+    public func setAppPath(_ path: String?, for bundleID: String) {
+        var paths = appPaths
+        paths[bundleID] = path
+        defaults.set(paths, forKey: appPathsKey)
+    }
+
+    private var appPaths: [String: String] {
+        defaults.dictionary(forKey: appPathsKey) as? [String: String] ?? [:]
     }
 }

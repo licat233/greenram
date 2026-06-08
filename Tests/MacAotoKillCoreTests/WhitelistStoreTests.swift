@@ -36,6 +36,17 @@ final class WhitelistStoreTests: XCTestCase {
         )
     }
 
+    func testRemovingWhitelistItemRemovesCachedAppPath() {
+        let (store, defaults, suiteName) = makeStore()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        store.add("com.example.notes")
+        store.setAppPath("/Applications/Notes.app", for: "com.example.notes")
+        store.remove("com.example.notes")
+
+        XCTAssertNil(store.appPath(for: "com.example.notes"))
+    }
+
     private func makeStore() -> (WhitelistStore, UserDefaults, String) {
         let suiteName = "milu.greenram.tests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

@@ -599,6 +599,14 @@ public struct Localizer: Equatable {
             .de: "Hinzufügen",
             .fr: "Ajouter"
         ],
+        "settings.chooseApp": [
+            .en: "Choose App...",
+            .zhHans: "选择 App...",
+            .zhHant: "選擇 App...",
+            .ja: "Appを選択...",
+            .de: "App auswählen...",
+            .fr: "Choisir une app..."
+        ],
         "settings.bundleIDPlaceholder": [
             .en: "Bundle ID",
             .zhHans: "Bundle ID",
