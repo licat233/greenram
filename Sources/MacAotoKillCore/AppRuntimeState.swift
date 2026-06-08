@@ -1,12 +1,6 @@
 import Darwin
 import Foundation
 
-public enum RiskLevel: String, CaseIterable, Equatable {
-    case low
-    case medium
-    case high
-}
-
 public enum MemoryPressureLevel: String, Equatable {
     case normal
     case warning
@@ -63,7 +57,6 @@ public struct AppRuntimeState: Equatable, Identifiable {
     public let descendantProcessCount: Int
     public let isFrontmost: Bool
     public let isWhitelisted: Bool
-    public let riskLevel: RiskLevel
 
     public var id: pid_t { pid }
 
@@ -77,7 +70,6 @@ public struct AppRuntimeState: Equatable, Identifiable {
         memoryBytes: UInt64,
         isFrontmost: Bool,
         isWhitelisted: Bool,
-        riskLevel: RiskLevel,
         ownMemoryBytes: UInt64? = nil,
         descendantMemoryBytes: UInt64 = 0,
         descendantProcessCount: Int = 0
@@ -94,7 +86,6 @@ public struct AppRuntimeState: Equatable, Identifiable {
         self.descendantProcessCount = descendantProcessCount
         self.isFrontmost = isFrontmost
         self.isWhitelisted = isWhitelisted
-        self.riskLevel = riskLevel
     }
 
     public func backgroundDuration(now: Date = Date()) -> TimeInterval {

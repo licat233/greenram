@@ -6,7 +6,6 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let menu = NSMenu()
     private let whitelistStore = WhitelistStore()
-    private let riskClassifier = RiskClassifier()
     private let foregroundTracker = ForegroundTracker()
     private let settingsStore = SettingsStore()
     private let eventLog = EventLog()
@@ -14,7 +13,6 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
     private lazy var processMonitor = ProcessMonitor(
         whitelistStore: whitelistStore,
-        riskClassifier: riskClassifier,
         foregroundTracker: foregroundTracker
     )
 
@@ -94,7 +92,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     private func makePolicyConfiguration() -> MemoryPolicyConfiguration {
         MemoryPolicyConfiguration(
             autoReleaseEnabled: true,
-            minimumMemoryBytes: settingsStore.minimumAppMemoryBytes,
+            minimumBackgroundDuration: settingsStore.minimumBackgroundDuration,
             maxAppsPerSweep: settingsStore.maxAppsPerSweep,
             forceTerminateImmediately: true
         )
@@ -109,57 +107,24 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     }
 
     private func releaseAutomaticallyIfNeeded() {
-        guard thresholdEvaluation.isExceeded else { return }
-
         let now = Date()
+        guard !memoryPolicyEngine.candidates(for: snapshot, now: now).isEmpty else { return }
+
         if let lastAutomaticReleaseAt, now.timeIntervalSince(lastAutomaticReleaseAt) < automaticReleaseCooldown {
             return
         }
 
         self.lastAutomaticReleaseAt = now
-        eventLog.append(localizer.t("event.autoReleaseTrigger", triggerSummary()))
-        memoryPolicyEngine.handleLimitExceeded(states: snapshot, now: now)
-    }
-
-    private func triggerSummary() -> String {
-        let reasons = localizedThresholdReasons()
-        if reasons.isEmpty {
-            return localizer.t("event.belowThresholds")
-        }
-        return reasons.joined(separator: ", ")
-    }
-
-    private func localizedThresholdReasons() -> [String] {
-        let thresholdConfiguration = makeThresholdConfiguration()
-        var reasons: [String] = []
-
-        if memorySnapshot.usedPhysicalPercent >= thresholdConfiguration.ramLimitPercent {
-            reasons.append(localizer.t(
-                "trigger.ramThreshold",
-                PercentFormatter.compact(memorySnapshot.usedPhysicalPercent),
-                PercentFormatter.compact(thresholdConfiguration.ramLimitPercent)
-            ))
-        }
-
-        if thresholdConfiguration.swapLimitEnabled && memorySnapshot.swapUsedBytes >= thresholdConfiguration.swapLimitBytes {
-            reasons.append(localizer.t(
-                "trigger.swapThreshold",
-                ByteFormatter.memory(memorySnapshot.swapUsedBytes),
-                ByteFormatter.memory(thresholdConfiguration.swapLimitBytes)
-            ))
-        }
-
-        return reasons
+        eventLog.append(localizer.t("event.autoReleaseTrigger", localizer.t("event.backgroundIdleTimeout")))
+        memoryPolicyEngine.handleAutomaticRelease(states: snapshot, now: now)
     }
 
     private func updateStatusTitle() {
-        let candidateCount = thresholdEvaluation.isExceeded
-            ? memoryPolicyEngine.candidates(for: snapshot).count
-            : 0
+        let candidateCount = memoryPolicyEngine.candidates(for: snapshot).count
         statusItem.button?.image = StatusIconFactory.makeImage(isExceeded: thresholdEvaluation.isExceeded)
-        statusItem.button?.toolTip = thresholdEvaluation.isExceeded
-            ? "\(localizer.t("status.exceeded")) · \(candidateCount)"
-            : localizer.t("status.withinLimits")
+        statusItem.button?.toolTip = candidateCount > 0
+            ? "\(localizer.t("dashboard.candidates")) · \(candidateCount)"
+            : (thresholdEvaluation.isExceeded ? localizer.t("status.exceeded") : localizer.t("status.withinLimits"))
     }
 
     private func rebuildMenu() {
@@ -298,9 +263,12 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         let submenu = NSMenu()
         submenu.autoenablesItems = false
         for app in apps {
-            let marker = cleanupMarker(for: app)
+            var titleParts = [app.displayName, memorySummary(for: app)]
+            if let marker = cleanupMarker(for: app) {
+                titleParts.append(marker)
+            }
             let item = NSMenuItem(
-                title: "\(app.displayName) - \(memorySummary(for: app)) - \(marker)",
+                title: titleParts.joined(separator: " - "),
                 action: nil,
                 keyEquivalent: ""
             )
@@ -321,10 +289,14 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         menu.addItem(parent)
     }
 
-    private func cleanupMarker(for app: AppRuntimeState) -> String {
-        memoryPolicyEngine.shouldTerminate(app)
-            ? localizer.t("menu.cleanable")
-            : localizer.t("menu.notCleanable")
+    private func cleanupMarker(for app: AppRuntimeState) -> String? {
+        if memoryPolicyEngine.shouldTerminate(app) {
+            return localizer.t("menu.cleanable")
+        }
+        if app.isWhitelisted {
+            return localizer.t("menu.protected")
+        }
+        return nil
     }
 
     private func addWhitelistSubmenu() {

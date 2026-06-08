@@ -4,16 +4,13 @@ import Foundation
 
 public final class ProcessMonitor {
     private let whitelistStore: WhitelistStore
-    private let riskClassifier: RiskClassifier
     private let foregroundTracker: ForegroundTracker
 
     public init(
         whitelistStore: WhitelistStore,
-        riskClassifier: RiskClassifier,
         foregroundTracker: ForegroundTracker
     ) {
         self.whitelistStore = whitelistStore
-        self.riskClassifier = riskClassifier
         self.foregroundTracker = foregroundTracker
     }
 
@@ -48,7 +45,6 @@ public final class ProcessMonitor {
                     memoryBytes: aggregate.totalMemoryBytes,
                     isFrontmost: app.processIdentifier == frontmostPID,
                     isWhitelisted: whitelistStore.contains(bundleID),
-                    riskLevel: riskClassifier.classify(bundleID: bundleID, displayName: displayName),
                     ownMemoryBytes: ownMemoryBytes,
                     descendantMemoryBytes: aggregate.descendantMemoryBytes,
                     descendantProcessCount: aggregate.descendantCount

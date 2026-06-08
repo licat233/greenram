@@ -12,7 +12,7 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(store.ramLimitPercent, MemoryPolicyDefaults.ramLimitPercent)
         XCTAssertEqual(store.swapLimitEnabled, MemoryPolicyDefaults.swapLimitEnabled)
         XCTAssertEqual(store.swapLimitBytes, MemoryPolicyDefaults.swapLimitBytes)
-        XCTAssertEqual(store.minimumAppMemoryBytes, MemoryPolicyDefaults.minimumAppMemoryBytes)
+        XCTAssertEqual(store.minimumBackgroundDuration, MemoryPolicyDefaults.minimumBackgroundDuration)
         XCTAssertEqual(store.maxAppsPerSweep, MemoryPolicyDefaults.maxAppsPerSweep)
     }
 

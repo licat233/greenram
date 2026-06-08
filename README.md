@@ -1,8 +1,8 @@
 # GreenRAM
 
-GreenRAM is a macOS menu bar app that watches RAM and Swap usage, then force quits cleanable apps when configured limits are exceeded.
+GreenRAM is a macOS menu bar app that watches memory usage and force quits idle background apps after a configurable non-frontmost duration.
 
-It is built for a simple case: keep the frontmost app responsive when memory pressure gets too high.
+It is built for a simple case: keep the frontmost app responsive by removing apps that have stayed in the background too long.
 
 ## Screenshots
 
@@ -17,22 +17,39 @@ It is built for a simple case: keep the frontmost app responsive when memory pre
 ## Features
 
 - Menu bar memory status with a green/red leaf icon.
-- RAM and Swap threshold settings.
-- Automatic cleanable app termination when limits are exceeded.
+- RAM and Swap status with configurable display thresholds.
+- Automatic cleanable app termination after the configured background time.
 - Manual "Clean Apps Now" action.
 - Whitelist support for apps that should never be quit.
 - Multi-process memory accounting for browsers, Electron apps, Xcode helpers, and similar app trees.
 - Localized UI for Simplified Chinese, Traditional Chinese, English, Japanese, German, and French.
 
-## Safety Rules
+## Current Cleanup Policy
+
+An app is considered cleanable only when all of these conditions are true:
+
+- It is a regular macOS GUI app with a Bundle ID.
+- It is not GreenRAM itself.
+- It is not the current macOS frontmost app.
+- It is not in the whitelist. The whitelist includes user-added apps and the built-in protected list: Finder, Dock, WindowServer, System Settings, and System Preferences.
+- Its non-frontmost time is at least the configured background-time threshold.
+
+The default background-time threshold is 30 minutes. It can be changed in Settings.
+
+App type, Bundle ID keywords, app-name keywords, and memory usage do not decide whether an app is cleanable.
+
+When multiple apps are cleanable, GreenRAM handles the apps that have stayed in the background longest first. Memory is only used as a tie-breaker and for display.
+
+Each automatic sweep force quits at most 3 cleanable apps by default. Automatic sweeps have a 60-second cooldown, and the same PID is not requested again for 10 minutes. Manual "Clean Apps Now" uses the same cleanable-app criteria.
+
+## Never Quit Rules
 
 GreenRAM never quits:
 
 - the frontmost app
 - whitelisted apps
 - protected system apps such as Finder, Dock, and System Settings
-- apps marked as not cleanable
-- small apps below the minimum memory threshold
+- background apps that have not reached the configured background-time threshold
 
 ## Download
 

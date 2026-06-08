@@ -3,18 +3,18 @@ import Foundation
 
 public struct MemoryPolicyConfiguration: Equatable {
     public var autoReleaseEnabled: Bool
-    public var minimumMemoryBytes: UInt64
+    public var minimumBackgroundDuration: TimeInterval
     public var maxAppsPerSweep: Int
     public var forceTerminateImmediately: Bool
 
     public init(
         autoReleaseEnabled: Bool = true,
-        minimumMemoryBytes: UInt64 = 250 * 1024 * 1024,
+        minimumBackgroundDuration: TimeInterval = MemoryPolicyDefaults.minimumBackgroundDuration,
         maxAppsPerSweep: Int = 3,
         forceTerminateImmediately: Bool = true
     ) {
         self.autoReleaseEnabled = autoReleaseEnabled
-        self.minimumMemoryBytes = minimumMemoryBytes
+        self.minimumBackgroundDuration = minimumBackgroundDuration
         self.maxAppsPerSweep = maxAppsPerSweep
         self.forceTerminateImmediately = forceTerminateImmediately
     }
@@ -40,7 +40,7 @@ public final class MemoryPolicyEngine {
         self.localizerProvider = localizerProvider
     }
 
-    public func handleLimitExceeded(
+    public func handleAutomaticRelease(
         states: [AppRuntimeState],
         now: Date = Date()
     ) {
@@ -88,33 +88,27 @@ public final class MemoryPolicyEngine {
         now: Date = Date()
     ) -> [AppRuntimeState] {
         states
-            .filter { shouldTerminate($0) }
-            .sorted { score($0, now: now) > score($1, now: now) }
+            .filter { shouldTerminate($0, now: now) }
+            .sorted { lhs, rhs in
+                let lhsDuration = lhs.backgroundDuration(now: now)
+                let rhsDuration = rhs.backgroundDuration(now: now)
+                if lhsDuration == rhsDuration {
+                    return lhs.memoryBytes > rhs.memoryBytes
+                }
+                return lhsDuration > rhsDuration
+            }
     }
 
-    public func shouldTerminate(_ app: AppRuntimeState) -> Bool {
+    public func shouldTerminate(_ app: AppRuntimeState, now: Date = Date()) -> Bool {
         guard app.pid != ProcessInfo.processInfo.processIdentifier else { return false }
         guard !app.isFrontmost else { return false }
         guard !app.isWhitelisted else { return false }
-        guard app.riskLevel != .high else { return false }
-        guard app.memoryBytes >= configuration.minimumMemoryBytes else { return false }
+        guard app.backgroundDuration(now: now) >= configuration.minimumBackgroundDuration else { return false }
         return true
     }
 
     public func score(_ app: AppRuntimeState, now: Date = Date()) -> Double {
-        let memoryScore = Double(app.memoryBytes) / Double(1024 * 1024)
-        let idleHours = app.backgroundDuration(now: now) / 3600
-        let riskPenalty: Double = {
-            switch app.riskLevel {
-            case .low:
-                return 0
-            case .medium:
-                return 300
-            case .high:
-                return 10_000
-            }
-        }()
-        return memoryScore + idleHours * 120 - riskPenalty
+        app.backgroundDuration(now: now)
     }
 
     private func hasRecentQuitRequest(for pid: pid_t, now: Date) -> Bool {

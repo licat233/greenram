@@ -23,24 +23,24 @@ final class MemoryPolicyEngineTests: XCTestCase {
         }
     }
 
-    func testCandidatesIncludeLowAndMediumRiskBackgroundApps() {
+    func testCandidatesIncludeAppsPastBackgroundThreshold() {
         let now = Date()
-        let lowRisk = makeApp(name: "Idle Shopper", lastBackgroundAt: now.addingTimeInterval(-60), risk: .low)
-        let mediumRisk = makeApp(name: "Browser", lastBackgroundAt: now.addingTimeInterval(-60), risk: .medium)
+        let idleLongEnough = makeApp(name: "Idle Shopper", lastBackgroundAt: now.addingTimeInterval(-31 * 60))
+        let alsoIdleLongEnough = makeApp(name: "Browser", lastBackgroundAt: now.addingTimeInterval(-45 * 60))
         let engine = makeEngine()
 
-        let candidates = engine.candidates(for: [lowRisk, mediumRisk], now: now)
+        let candidates = engine.candidates(for: [idleLongEnough, alsoIdleLongEnough], now: now)
 
         XCTAssertEqual(Set(candidates.map(\.displayName)), ["Idle Shopper", "Browser"])
     }
 
-    func testPolicyNeverTargetsFrontmostWhitelistedOrHighRiskApps() {
+    func testPolicyNeverTargetsFrontmostWhitelistedOrRecentlyBackgroundedApps() {
         let now = Date()
         let engine = makeEngine()
         let apps = [
-            makeApp(name: "Front", lastBackgroundAt: now.addingTimeInterval(-60), isFrontmost: true),
-            makeApp(name: "Pinned", lastBackgroundAt: now.addingTimeInterval(-60), isWhitelisted: true),
-            makeApp(name: "Terminal", lastBackgroundAt: now.addingTimeInterval(-60), risk: .high)
+            makeApp(name: "Front", lastBackgroundAt: now.addingTimeInterval(-31 * 60), isFrontmost: true),
+            makeApp(name: "Pinned", lastBackgroundAt: now.addingTimeInterval(-31 * 60), isWhitelisted: true),
+            makeApp(name: "Recent", lastBackgroundAt: now.addingTimeInterval(-29 * 60))
         ]
 
         let candidates = engine.candidates(for: apps, now: now)
@@ -48,7 +48,7 @@ final class MemoryPolicyEngineTests: XCTestCase {
         XCTAssertTrue(candidates.isEmpty)
     }
 
-    func testHandleLimitExceededForceQuitsAtMostConfiguredNumberOfApps() {
+    func testAutomaticReleaseForceQuitsAtMostConfiguredNumberOfApps() {
         let now = Date()
         let terminator = TerminatorSpy()
         let logger = LoggerSpy()
@@ -61,13 +61,12 @@ final class MemoryPolicyEngineTests: XCTestCase {
             makeApp(
                 pid: pid_t(1_000 + $0),
                 name: "App \($0)",
-                lastBackgroundAt: now.addingTimeInterval(-60),
-                memoryBytes: UInt64(300 + $0) * 1024 * 1024,
-                risk: .low
+                lastBackgroundAt: now.addingTimeInterval(-31 * 60),
+                memoryBytes: UInt64(300 + $0) * 1024 * 1024
             )
         }
 
-        engine.handleLimitExceeded(states: apps, now: now)
+        engine.handleAutomaticRelease(states: apps, now: now)
 
         XCTAssertEqual(terminator.forceQuitApps.count, 2)
         XCTAssertTrue(terminator.quitApps.isEmpty)
@@ -85,9 +84,8 @@ final class MemoryPolicyEngineTests: XCTestCase {
         let app = makeApp(
             pid: 1_000,
             name: "Background App",
-            lastBackgroundAt: now.addingTimeInterval(-60),
-            memoryBytes: 512 * 1024 * 1024,
-            risk: .low
+            lastBackgroundAt: now.addingTimeInterval(-31 * 60),
+            memoryBytes: 512 * 1024 * 1024
         )
 
         engine.handleManualRelease(states: [app], now: now)
@@ -109,8 +107,7 @@ final class MemoryPolicyEngineTests: XCTestCase {
         lastBackgroundAt: Date?,
         memoryBytes: UInt64 = 512 * 1024 * 1024,
         isFrontmost: Bool = false,
-        isWhitelisted: Bool = false,
-        risk: RiskLevel = .low
+        isWhitelisted: Bool = false
     ) -> AppRuntimeState {
         AppRuntimeState(
             pid: pid,
@@ -121,8 +118,7 @@ final class MemoryPolicyEngineTests: XCTestCase {
             lastBackgroundAt: lastBackgroundAt,
             memoryBytes: memoryBytes,
             isFrontmost: isFrontmost,
-            isWhitelisted: isWhitelisted,
-            riskLevel: risk
+            isWhitelisted: isWhitelisted
         )
     }
 }

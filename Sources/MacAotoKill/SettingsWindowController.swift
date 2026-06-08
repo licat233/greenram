@@ -74,6 +74,7 @@ private final class SettingsViewModel: ObservableObject {
     @Published var ramLimitPercent: Double
     @Published var swapLimitEnabled: Bool
     @Published var swapLimitGB: Double
+    @Published var minimumBackgroundMinutes: Double
     @Published var isResetConfirmationPresented = false
 
     var localizer: Localizer {
@@ -95,6 +96,7 @@ private final class SettingsViewModel: ObservableObject {
         self.ramLimitPercent = settingsStore.ramLimitPercent
         self.swapLimitEnabled = settingsStore.swapLimitEnabled
         self.swapLimitGB = Double(settingsStore.swapLimitBytes) / Double(1024 * 1024 * 1024)
+        self.minimumBackgroundMinutes = settingsStore.minimumBackgroundDuration / 60
     }
 
     func load() {
@@ -102,6 +104,7 @@ private final class SettingsViewModel: ObservableObject {
         ramLimitPercent = settingsStore.ramLimitPercent
         swapLimitEnabled = settingsStore.swapLimitEnabled
         swapLimitGB = Double(settingsStore.swapLimitBytes) / Double(1024 * 1024 * 1024)
+        minimumBackgroundMinutes = settingsStore.minimumBackgroundDuration / 60
     }
 
     func refreshMemory() {
@@ -114,6 +117,7 @@ private final class SettingsViewModel: ObservableObject {
         settingsStore.swapLimitEnabled = swapLimitEnabled
         let swapLimitBytes = UInt64(swapLimitGB * Double(1024 * 1024 * 1024))
         settingsStore.swapLimitBytes = max(MemoryPolicyDefaults.minimumSwapLimitBytes, swapLimitBytes)
+        settingsStore.minimumBackgroundDuration = minimumBackgroundMinutes * 60
         onChange()
     }
 
@@ -163,6 +167,9 @@ private struct SettingsView: View {
             viewModel.save()
         }
         .onChange(of: viewModel.swapLimitGB) { _ in
+            viewModel.save()
+        }
+        .onChange(of: viewModel.minimumBackgroundMinutes) { _ in
             viewModel.save()
         }
         .alert(localizer.t("settings.resetConfirmTitle"), isPresented: $viewModel.isResetConfirmationPresented) {
@@ -258,6 +265,14 @@ private struct SettingsView: View {
                         .padding(.leading, 176)
                         .padding(.bottom, 12)
                 }
+                rowDivider
+                valueRow(
+                    title: localizer.t("settings.minimumBackgroundTime"),
+                    value: $viewModel.minimumBackgroundMinutes,
+                    range: 1...240,
+                    suffix: "min",
+                    isExceeded: false
+                )
             }
         }
     }

@@ -208,12 +208,12 @@ public struct Localizer: Equatable {
             .fr: "Dans la limite"
         ],
         "menu.autoRelease": [
-            .en: "Auto Clean When Over Limit",
-            .zhHans: "超限自动清理可清理 App",
-            .zhHant: "超限自動清理可清理 App",
-            .ja: "上限超過時に背景アプリを整理",
-            .de: "Bei Limitüberschreitung automatisch bereinigen",
-            .fr: "Nettoyer automatiquement au dépassement"
+            .en: "Auto Clean Idle Background Apps",
+            .zhHans: "自动清理超时后台 App",
+            .zhHant: "自動清理逾時背景 App",
+            .ja: "待機中の背景アプリを自動整理",
+            .de: "Inaktive Hintergrund-Apps automatisch bereinigen",
+            .fr: "Nettoyer les apps inactives en arrière-plan"
         ],
         "dashboard.candidates": [
             .en: "Cleanable",
@@ -318,6 +318,14 @@ public struct Localizer: Equatable {
             .ja: "清理可",
             .de: "Bereinigbar",
             .fr: "Nettoyable"
+        ],
+        "menu.protected": [
+            .en: "Protected",
+            .zhHans: "受保护",
+            .zhHant: "受保護",
+            .ja: "保護中",
+            .de: "Geschützt",
+            .fr: "Protégée"
         ],
         "menu.notCleanable": [
             .en: "Not Cleanable",
@@ -432,20 +440,20 @@ public struct Localizer: Equatable {
             .fr: "Swap utilisé"
         ],
         "settings.releaseThresholds": [
-            .en: "Trigger Limits",
-            .zhHans: "触发上限",
-            .zhHant: "觸發上限",
-            .ja: "実行上限",
-            .de: "Auslöselimits",
-            .fr: "Limites de déclenchement"
+            .en: "Cleanup Limits",
+            .zhHans: "清理上限",
+            .zhHant: "清理上限",
+            .ja: "整理の上限",
+            .de: "Bereinigungslimits",
+            .fr: "Limites de nettoyage"
         ],
         "settings.autoReleaseCheckbox": [
-            .en: "Auto clean eligible apps when over limit",
-            .zhHans: "超限后自动清理可清理 App",
-            .zhHant: "超限後自動清理可清理 App",
-            .ja: "上限超過時に背景アプリを自動整理",
-            .de: "Hintergrund-Apps bei Limitüberschreitung bereinigen",
-            .fr: "Nettoyer les apps en arrière-plan au dépassement"
+            .en: "Auto clean idle background apps",
+            .zhHans: "自动清理超时后台 App",
+            .zhHant: "自動清理逾時背景 App",
+            .ja: "待機中の背景アプリを自動整理",
+            .de: "Inaktive Hintergrund-Apps automatisch bereinigen",
+            .fr: "Nettoyer les apps inactives en arrière-plan"
         ],
         "settings.ramLimit": [
             .en: "RAM Max",
@@ -511,13 +519,13 @@ public struct Localizer: Equatable {
             .de: "Auslagerung kritisch",
             .fr: "Swap critique"
         ],
-        "settings.minimumAppMemory": [
-            .en: "Minimum app memory",
-            .zhHans: "可清理 App 最小内存",
-            .zhHant: "可清理 App 最小記憶體",
-            .ja: "候補アプリの最小メモリ",
-            .de: "Min. App-Speicher",
-            .fr: "Mémoire app minimale"
+        "settings.minimumBackgroundTime": [
+            .en: "Background time",
+            .zhHans: "非前台时间",
+            .zhHant: "非前台時間",
+            .ja: "背景時間",
+            .de: "Hintergrundzeit",
+            .fr: "Temps en arrière-plan"
         ],
         "settings.warningIdleTime": [
             .en: "Warning idle time",
@@ -687,6 +695,14 @@ public struct Localizer: Equatable {
             .de: "Automatische Bereinigung ausgelöst: %@.",
             .fr: "Déclenchement du nettoyage : %@."
         ],
+        "event.backgroundIdleTimeout": [
+            .en: "background time exceeded",
+            .zhHans: "非前台时间已超过阈值",
+            .zhHant: "非前台時間已超過閾值",
+            .ja: "背景時間がしきい値を超過",
+            .de: "Hintergrundzeit überschritten",
+            .fr: "temps en arrière-plan dépassé"
+        ],
         "event.systemPressure": [
             .en: "System pressure %@",
             .zhHans: "系统压力 %@",
@@ -784,11 +800,11 @@ public struct Localizer: Equatable {
             .fr: "%@ retirée de la liste blanche."
         ],
         "event.autoReleaseDisabledIgnored": [
-            .en: "Auto cleanup is disabled; pressure event ignored.",
-            .zhHans: "超限自动清理已关闭；忽略压力事件。",
-            .zhHant: "超限自動清理已關閉；忽略壓力事件。",
-            .ja: "自動整理が無効なため圧力イベントを無視しました。",
-            .de: "Automatische Bereinigung deaktiviert; Druckereignis ignoriert.",
+            .en: "Auto cleanup is disabled; cleanup event ignored.",
+            .zhHans: "自动清理已关闭；忽略清理事件。",
+            .zhHant: "自動清理已關閉；忽略清理事件。",
+            .ja: "自動整理が無効なため整理イベントを無視しました。",
+            .de: "Automatische Bereinigung deaktiviert; Ereignis ignoriert.",
             .fr: "Nettoyage automatique désactivé ; événement ignoré."
         ],
         "event.noEligibleApps": [

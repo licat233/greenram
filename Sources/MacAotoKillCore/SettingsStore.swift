@@ -6,7 +6,7 @@ public final class SettingsStore {
     private let ramLimitPercentKey = "ramLimitPercent"
     private let swapLimitEnabledKey = "swapLimitEnabled"
     private let swapLimitBytesKey = "swapLimitBytes"
-    private let minimumAppMemoryBytesKey = "minimumAppMemoryBytes"
+    private let minimumBackgroundDurationKey = "minimumBackgroundDuration"
     private let maxAppsPerSweepKey = "maxAppsPerSweep"
     private let languageCodeKey = "languageCode"
 
@@ -52,9 +52,9 @@ public final class SettingsStore {
         }
     }
 
-    public var minimumAppMemoryBytes: UInt64 {
-        get { uint64(forKey: minimumAppMemoryBytesKey, defaultValue: MemoryPolicyDefaults.minimumAppMemoryBytes) }
-        set { defaults.set(Double(newValue), forKey: minimumAppMemoryBytesKey) }
+    public var minimumBackgroundDuration: TimeInterval {
+        get { double(forKey: minimumBackgroundDurationKey, defaultValue: MemoryPolicyDefaults.minimumBackgroundDuration) }
+        set { defaults.set(max(60, newValue), forKey: minimumBackgroundDurationKey) }
     }
 
     public var maxAppsPerSweep: Int {
@@ -79,7 +79,7 @@ public final class SettingsStore {
         defaults.removeObject(forKey: ramLimitPercentKey)
         defaults.removeObject(forKey: swapLimitEnabledKey)
         defaults.removeObject(forKey: swapLimitBytesKey)
-        defaults.removeObject(forKey: minimumAppMemoryBytesKey)
+        defaults.removeObject(forKey: minimumBackgroundDurationKey)
         defaults.removeObject(forKey: maxAppsPerSweepKey)
     }
 
