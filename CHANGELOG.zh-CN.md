@@ -4,6 +4,14 @@
 
 这里记录 GreenRAM 的重要发布变更。
 
+## v0.11.0 - 2026-06-13
+
+- 加入基于 GitHub Releases 的 App 内一键更新，使用已签名、已 notarize 的 App zip 资产。
+- 加入自动下载、解压、替换 App 并重启的更新安装流程。
+- 更新安装前会校验 Bundle ID、版本、代码签名、Team ID 和 Gatekeeper 评估结果。
+- 自动更新检查改为 GreenRAM 持续运行时也每天检查一次；只要仍有新版本，就会继续提醒安装。
+- 自动更新优先选择 `GreenRAM-*.app.zip` 发布资产，没有可安装 zip 时回退到 DMG / 手动下载。
+
 ## v0.1.10 - 2026-06-13
 
 - 重构 Settings 为更清晰的 SwiftUI 和 AppleViewModel 结构，并将 App 规则管理集中到独立页面。

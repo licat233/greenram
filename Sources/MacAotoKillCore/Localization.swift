@@ -255,6 +255,14 @@ public struct Localizer: Equatable {
             .de: "Updates werden gesucht...",
             .fr: "Recherche de mises à jour..."
         ],
+        "menu.installingUpdate": [
+            .en: "Installing Update...",
+            .zhHans: "正在安装更新...",
+            .zhHant: "正在安裝更新...",
+            .ja: "アップデートをインストール中...",
+            .de: "Update wird installiert...",
+            .fr: "Installation de la mise à jour..."
+        ],
         "menu.releaseNow": [
             .en: "Clean Apps Now",
             .zhHans: "立即清理可清理 App",
@@ -439,6 +447,14 @@ public struct Localizer: Equatable {
             .de: "Laden",
             .fr: "Télécharger"
         ],
+        "update.installAndRestart": [
+            .en: "Install and Restart",
+            .zhHans: "安装并重启",
+            .zhHant: "安裝並重啟",
+            .ja: "インストールして再起動",
+            .de: "Installieren und neu starten",
+            .fr: "Installer et redémarrer"
+        ],
         "update.releasePage": [
             .en: "Release Page",
             .zhHans: "发布页",
@@ -487,6 +503,22 @@ public struct Localizer: Equatable {
             .de: "%@",
             .fr: "%@"
         ],
+        "update.installFailedTitle": [
+            .en: "Update install failed",
+            .zhHans: "安装更新失败",
+            .zhHant: "安裝更新失敗",
+            .ja: "アップデートのインストールに失敗しました",
+            .de: "Update-Installation fehlgeschlagen",
+            .fr: "Échec de l'installation de la mise à jour"
+        ],
+        "update.installFailedMessage": [
+            .en: "%@",
+            .zhHans: "%@",
+            .zhHant: "%@",
+            .ja: "%@",
+            .de: "%@",
+            .fr: "%@"
+        ],
         "update.ok": [
             .en: "OK",
             .zhHans: "好",
@@ -512,12 +544,12 @@ public struct Localizer: Equatable {
             .fr: "Rappels automatiques de mise à jour"
         ],
         "settings.automaticUpdateReminderHint": [
-            .en: "GreenRAM checks GitHub in the background at most once per day and automatically prompts only once for each new version.",
-            .zhHans: "GreenRAM 每天最多在后台检查一次 GitHub；每个新版本只会自动提醒一次。",
-            .zhHant: "GreenRAM 每天最多在背景檢查一次 GitHub；每個新版本只會自動提醒一次。",
-            .ja: "GreenRAM はバックグラウンドで GitHub を 1 日 1 回まで確認し、新しい各バージョンにつき自動通知は 1 回だけ行います。",
-            .de: "GreenRAM prüft GitHub im Hintergrund höchstens einmal pro Tag und zeigt pro neuer Version nur einmal automatisch einen Hinweis.",
-            .fr: "GreenRAM vérifie GitHub en arrière-plan au plus une fois par jour et n'affiche qu'un seul rappel automatique par nouvelle version."
+            .en: "GreenRAM checks GitHub in the background at most once per day and prompts when a new version is available.",
+            .zhHans: "GreenRAM 每天最多在后台检查一次 GitHub；有新版本时会提醒安装。",
+            .zhHant: "GreenRAM 每天最多在背景檢查一次 GitHub；有新版本時會提醒安裝。",
+            .ja: "GreenRAM はバックグラウンドで GitHub を 1 日 1 回まで確認し、新しいバージョンがあると通知します。",
+            .de: "GreenRAM prüft GitHub im Hintergrund höchstens einmal pro Tag und zeigt bei einer neuen Version einen Hinweis.",
+            .fr: "GreenRAM vérifie GitHub en arrière-plan au plus une fois par jour et vous prévient lorsqu'une nouvelle version est disponible."
         ],
         "settings.language": [
             .en: "Language",
@@ -918,6 +950,30 @@ public struct Localizer: Equatable {
             .ja: "アップデート確認に失敗しました：%@。",
             .de: "Update-Prüfung fehlgeschlagen: %@.",
             .fr: "Échec de la recherche de mise à jour : %@."
+        ],
+        "event.updateInstallStarted": [
+            .en: "Installing update %@.",
+            .zhHans: "正在安装更新 %@。",
+            .zhHant: "正在安裝更新 %@。",
+            .ja: "アップデート %@ をインストール中。",
+            .de: "Update %@ wird installiert.",
+            .fr: "Installation de la mise à jour %@."
+        ],
+        "event.updateInstallRelaunching": [
+            .en: "Relaunching into update %@.",
+            .zhHans: "正在重启到更新 %@。",
+            .zhHant: "正在重啟到更新 %@。",
+            .ja: "アップデート %@ で再起動中。",
+            .de: "Neustart mit Update %@.",
+            .fr: "Redémarrage vers la mise à jour %@."
+        ],
+        "event.updateInstallFailed": [
+            .en: "Update install failed: %@.",
+            .zhHans: "安装更新失败：%@。",
+            .zhHant: "安裝更新失敗：%@。",
+            .ja: "アップデートのインストールに失敗しました：%@。",
+            .de: "Update-Installation fehlgeschlagen: %@.",
+            .fr: "Échec de l'installation de la mise à jour : %@."
         ],
         "event.memoryPressureChanged": [
             .en: "Memory pressure changed to %@.",

@@ -5,6 +5,18 @@ public struct AppUpdateInfo: Equatable {
     public let latestVersion: String
     public let releasePageURL: URL
     public let downloadURL: URL
+    public let downloadAssetName: String?
+    public let downloadKind: AppUpdateDownloadKind
+
+    public var canInstallAutomatically: Bool {
+        downloadKind == .applicationZipArchive
+    }
+}
+
+public enum AppUpdateDownloadKind: Equatable {
+    case applicationZipArchive
+    case diskImage
+    case other
 }
 
 public enum AppUpdateCheckResult: Equatable {
@@ -70,28 +82,67 @@ public struct GitHubReleaseUpdateChecker: Sendable {
             return .upToDate(currentVersion: currentVersion, latestVersion: latestVersion)
         }
 
-        let downloadURL = Self.preferredDownloadURL(from: release.assets) ?? release.htmlURL
+        let download = Self.preferredDownload(from: release.assets) ?? GitHubReleaseDownload(
+            name: nil,
+            url: release.htmlURL,
+            kind: .other
+        )
         return .updateAvailable(
             AppUpdateInfo(
                 currentVersion: currentVersion,
                 latestVersion: latestVersion,
                 releasePageURL: release.htmlURL,
-                downloadURL: downloadURL
+                downloadURL: download.url,
+                downloadAssetName: download.name,
+                downloadKind: download.kind
             )
         )
     }
 
-    private static func preferredDownloadURL(from assets: [GitHubReleaseAsset]) -> URL? {
-        assets.first { $0.name.lowercased().hasSuffix(".dmg") }?.browserDownloadURL
-            ?? assets.first { $0.name.lowercased().hasSuffix(".zip") }?.browserDownloadURL
-            ?? assets.first?.browserDownloadURL
+    private static func preferredDownload(from assets: [GitHubReleaseAsset]) -> GitHubReleaseDownload? {
+        let downloads = assets.map {
+            GitHubReleaseDownload(
+                name: $0.name,
+                url: $0.browserDownloadURL,
+                kind: downloadKind(assetName: $0.name, url: $0.browserDownloadURL)
+            )
+        }
+
+        return downloads.first { Self.isPreferredApplicationZip($0) }
+            ?? downloads.first { $0.kind == .applicationZipArchive }
+            ?? downloads.first { $0.kind == .diskImage }
+            ?? downloads.first
+    }
+
+    private static func downloadKind(assetName: String?, url: URL) -> AppUpdateDownloadKind {
+        let fileNameSource: String
+        if let assetName, !assetName.isEmpty {
+            fileNameSource = assetName
+        } else {
+            fileNameSource = url.lastPathComponent
+        }
+        let fileName = fileNameSource.lowercased()
+        if fileName.hasSuffix(".zip") {
+            return .applicationZipArchive
+        }
+        if fileName.hasSuffix(".dmg") {
+            return .diskImage
+        }
+        return .other
+    }
+
+    private static func isPreferredApplicationZip(_ download: GitHubReleaseDownload) -> Bool {
+        let fileName = (download.name ?? download.url.lastPathComponent).lowercased()
+        return download.kind == .applicationZipArchive
+            && fileName.contains("greenram")
+            && fileName.hasSuffix(".app.zip")
     }
 }
 
-struct AppReleaseVersion: Comparable, Equatable {
+public struct AppReleaseVersion: Comparable, Equatable {
     private let components: [Int]
 
-    init(_ rawValue: String) {
+    public init(_ rawValue: String) {
         let normalized = rawValue
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .trimmingPrefix("v")
@@ -102,11 +153,11 @@ struct AppReleaseVersion: Comparable, Equatable {
             .compactMap { Int($0) }
     }
 
-    static func == (lhs: AppReleaseVersion, rhs: AppReleaseVersion) -> Bool {
+    public static func == (lhs: AppReleaseVersion, rhs: AppReleaseVersion) -> Bool {
         !(lhs < rhs) && !(rhs < lhs)
     }
 
-    static func < (lhs: AppReleaseVersion, rhs: AppReleaseVersion) -> Bool {
+    public static func < (lhs: AppReleaseVersion, rhs: AppReleaseVersion) -> Bool {
         let count = max(lhs.components.count, rhs.components.count)
         for index in 0..<count {
             let lhsValue = index < lhs.components.count ? lhs.components[index] : 0
@@ -139,6 +190,12 @@ private struct GitHubReleaseAsset: Decodable {
         case name
         case browserDownloadURL = "browser_download_url"
     }
+}
+
+private struct GitHubReleaseDownload {
+    let name: String?
+    let url: URL
+    let kind: AppUpdateDownloadKind
 }
 
 private extension String {

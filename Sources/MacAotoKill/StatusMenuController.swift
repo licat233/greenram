@@ -13,6 +13,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     private var settingsWindowController: SettingsWindowController?
     private var updateCheckTask: Task<Void, Never>?
     private var isCheckingForUpdates = false
+    private var isInstallingUpdate = false
     private var isAutomaticUpdateCheckScheduled = false
 
     private lazy var processMonitor = ProcessMonitor(
@@ -79,6 +80,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
             DispatchQueue.main.async {
                 self?.refreshSnapshot(performAutomaticRelease: true)
+                self?.scheduleAutomaticUpdateCheckIfNeeded()
             }
         }
     }
@@ -153,13 +155,20 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         settingsItem.image = symbolMenuIcon("gearshape")
         menu.addItem(settingsItem)
 
+        let updateItemTitle = if isInstallingUpdate {
+            localizer.t("menu.installingUpdate")
+        } else if isCheckingForUpdates {
+            localizer.t("menu.checkingForUpdates")
+        } else {
+            localizer.t("menu.checkForUpdates")
+        }
         let updateItem = NSMenuItem(
-            title: isCheckingForUpdates ? localizer.t("menu.checkingForUpdates") : localizer.t("menu.checkForUpdates"),
+            title: updateItemTitle,
             action: #selector(checkForUpdates(_:)),
             keyEquivalent: ""
         )
         updateItem.target = self
-        updateItem.isEnabled = !isCheckingForUpdates
+        updateItem.isEnabled = !isCheckingForUpdates && !isInstallingUpdate
         updateItem.image = symbolMenuIcon("arrow.down.circle")
         menu.addItem(updateItem)
 
@@ -453,7 +462,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
     private func beginUpdateCheck(isUserInitiated: Bool) {
         guard isUserInitiated || settingsStore.automaticUpdateReminderEnabled else { return }
-        guard !isCheckingForUpdates else { return }
+        guard !isCheckingForUpdates && !isInstallingUpdate else { return }
 
         isCheckingForUpdates = true
         let checker = GitHubReleaseUpdateChecker(currentVersion: AppIdentity.currentVersion)
@@ -483,9 +492,6 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
             }
         case .updateAvailable(let info):
             eventLog.append(localizer.t("event.updateAvailable", info.latestVersion, info.currentVersion))
-            guard isUserInitiated || settingsStore.lastPromptedUpdateVersion != info.latestVersion else {
-                return
-            }
             settingsStore.lastPromptedUpdateVersion = info.latestVersion
             presentUpdateAvailableAlert(info)
         }
@@ -515,15 +521,58 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         alert.icon = nil
         alert.messageText = localizer.t("update.availableTitle", info.latestVersion)
         alert.informativeText = localizer.t("update.availableMessage", info.currentVersion)
-        alert.addButton(withTitle: localizer.t("update.download"))
+        alert.addButton(withTitle: info.canInstallAutomatically ? localizer.t("update.installAndRestart") : localizer.t("update.download"))
         alert.addButton(withTitle: localizer.t("update.releasePage"))
         alert.addButton(withTitle: localizer.t("update.later"))
 
         NSApp.activate(ignoringOtherApps: true)
         let response = alert.runModal()
         if response == .alertFirstButtonReturn {
-            NSWorkspace.shared.open(info.downloadURL)
+            if info.canInstallAutomatically {
+                installUpdate(info)
+            } else {
+                NSWorkspace.shared.open(info.downloadURL)
+            }
         } else if response == .alertSecondButtonReturn {
+            NSWorkspace.shared.open(info.releasePageURL)
+        }
+    }
+
+    private func installUpdate(_ info: AppUpdateInfo) {
+        guard !isInstallingUpdate else { return }
+
+        isInstallingUpdate = true
+        eventLog.append(localizer.t("event.updateInstallStarted", info.latestVersion))
+        let installer = AppUpdateInstaller()
+        updateCheckTask?.cancel()
+        updateCheckTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let installation = try await installer.prepareInstallation(for: info)
+                try installation.launchInstaller()
+                eventLog.append(localizer.t("event.updateInstallRelaunching", info.latestVersion))
+                NSApp.terminate(nil)
+            } catch {
+                failUpdateInstall(error, info: info)
+            }
+        }
+    }
+
+    private func failUpdateInstall(_ error: Error, info: AppUpdateInfo) {
+        isInstallingUpdate = false
+        updateCheckTask = nil
+        eventLog.append(localizer.t("event.updateInstallFailed", error.localizedDescription))
+
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.icon = nil
+        alert.messageText = localizer.t("update.installFailedTitle")
+        alert.informativeText = localizer.t("update.installFailedMessage", error.localizedDescription)
+        alert.addButton(withTitle: localizer.t("update.releasePage"))
+        alert.addButton(withTitle: localizer.t("update.ok"))
+        NSApp.activate(ignoringOtherApps: true)
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
             NSWorkspace.shared.open(info.releasePageURL)
         }
     }

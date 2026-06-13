@@ -4,6 +4,14 @@
 
 All notable GreenRAM release changes are recorded here.
 
+## v0.11.0 - 2026-06-13
+
+- Added one-click in-app updates from GitHub Releases using the signed and notarized app zip asset.
+- Added automatic download, extraction, app replacement, and relaunch for installable updates.
+- Hardened update validation with Bundle ID, version, code-signature, Team ID, and Gatekeeper checks before installation.
+- Changed automatic update checks to run daily while GreenRAM remains open and to prompt whenever a newer version is still available.
+- Prefer `GreenRAM-*.app.zip` release assets for automatic updates, with DMG/manual download as a fallback.
+
 ## v0.1.10 - 2026-06-13
 
 - Refactored Settings into a cleaner SwiftUI and AppleViewModel structure, with app-rule management moved into a focused rules page.
