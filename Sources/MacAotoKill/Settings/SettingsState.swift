@@ -48,6 +48,7 @@ struct SettingsState: Equatable {
     var swapLimitGB: Double
     var minimumBackgroundMinutes: Double
     var automaticUpdateReminderEnabled: Bool
+    var appVersion: String
     var appIdleTimeItems: [IdleTimeAppInfo]
     var whitelistItems: [WhitelistAppInfo]
     var newIdleTimeBundleID = ""

@@ -115,6 +115,7 @@ public final class MemoryPolicyEngine {
 
     public func shouldTerminate(_ app: AppRuntimeState, now: Date = Date()) -> Bool {
         guard app.pid != ProcessInfo.processInfo.processIdentifier else { return false }
+        guard !AppIdentity.isOwnBundleIdentifier(app.bundleID) else { return false }
         guard !app.isFrontmost else { return false }
         guard !app.isWhitelisted else { return false }
 

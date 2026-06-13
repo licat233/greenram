@@ -69,7 +69,7 @@ GreenRAM 永远不会退出：
 ## 下载
 
 从 [Releases](../../releases) 页面下载最新已签名并完成 notarize 的 DMG。
-App 内自动更新使用同一 release 附带的已签名、已 notarize 的 `GreenRAM-<version>.zip` App 压缩包。
+App 内自动更新优先使用同一 release 附带的已签名、已 notarize 的 `GreenRAM-<version>.app.zip` App 压缩包。
 
 ## 构建
 

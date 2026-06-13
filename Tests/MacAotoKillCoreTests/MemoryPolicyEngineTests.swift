@@ -87,6 +87,23 @@ final class MemoryPolicyEngineTests: XCTestCase {
         XCTAssertTrue(candidates.isEmpty)
     }
 
+    func testPolicyNeverTargetsOwnBundleIdentifier() {
+        let now = Date()
+        let engine = makeEngine(
+            autoQuitDurations: [AppIdentity.bundleIdentifier: 30 * 60],
+            isMemoryLimitExceeded: true
+        )
+        let app = makeApp(
+            pid: 42_000,
+            bundleID: AppIdentity.bundleIdentifier,
+            name: "GreenRAM",
+            lastBackgroundAt: now.addingTimeInterval(-31 * 60)
+        )
+
+        XCTAssertFalse(engine.shouldTerminate(app, now: now))
+        XCTAssertTrue(engine.candidates(for: [app], now: now).isEmpty)
+    }
+
     func testAutomaticReleaseForceQuitsAtMostConfiguredNumberOfApps() {
         let now = Date()
         let terminator = TerminatorSpy()

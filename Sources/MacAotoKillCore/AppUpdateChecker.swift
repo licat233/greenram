@@ -9,7 +9,7 @@ public struct AppUpdateInfo: Equatable {
     public let downloadKind: AppUpdateDownloadKind
 
     public var canInstallAutomatically: Bool {
-        downloadKind == .applicationZipArchive
+        downloadKind == .applicationZipArchive || downloadKind == .diskImage
     }
 }
 
@@ -110,6 +110,7 @@ public struct GitHubReleaseUpdateChecker: Sendable {
 
         return downloads.first { Self.isPreferredApplicationZip($0) }
             ?? downloads.first { $0.kind == .applicationZipArchive }
+            ?? downloads.first { Self.isPreferredDiskImage($0) }
             ?? downloads.first { $0.kind == .diskImage }
             ?? downloads.first
     }
@@ -136,6 +137,13 @@ public struct GitHubReleaseUpdateChecker: Sendable {
         return download.kind == .applicationZipArchive
             && fileName.contains("greenram")
             && fileName.hasSuffix(".app.zip")
+    }
+
+    private static func isPreferredDiskImage(_ download: GitHubReleaseDownload) -> Bool {
+        let fileName = (download.name ?? download.url.lastPathComponent).lowercased()
+        return download.kind == .diskImage
+            && fileName.contains("greenram")
+            && fileName.hasSuffix(".dmg")
     }
 }
 

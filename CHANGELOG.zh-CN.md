@@ -4,6 +4,14 @@
 
 这里记录 GreenRAM 的重要发布变更。
 
+## v0.11.1 - 2026-06-13
+
+- App 内自动更新继续优先使用已签名、已 notarize 的 `.app.zip` 发布资产。
+- 当 release 没有 zip 资产时，自动更新可回退到安装 DMG。
+- 自动更新安装时，如果 `spctl` 遇到临时系统错误，会回退使用 Gatekeeper 分发检查。
+- Settings 中显示当前 GreenRAM 版本。
+- 禁止将 GreenRAM 自己加入清理规则，且清理逻辑永不处理 GreenRAM 自己。
+
 ## v0.11.0 - 2026-06-13
 
 - 加入基于 GitHub Releases 的 App 内一键更新，使用已签名、已 notarize 的 App zip 资产。

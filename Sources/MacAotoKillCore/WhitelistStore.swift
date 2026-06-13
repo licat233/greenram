@@ -25,17 +25,21 @@ public final class WhitelistStore {
     public var bundleIDs: Set<String> {
         get {
             if let ids = defaults.stringArray(forKey: whitelistKey) {
-                return Set(ids)
+                let sanitizedIDs = Self.userEditableBundleIDs(from: Set(ids))
+                if sanitizedIDs.count != ids.count {
+                    defaults.set(Array(sanitizedIDs).sorted(), forKey: whitelistKey)
+                }
+                return sanitizedIDs
             }
 
-            let migrated = Self.defaultProtectedBundleIDs.union(
+            let migrated = Self.userEditableBundleIDs(from: Self.defaultProtectedBundleIDs.union(
                 defaults.stringArray(forKey: legacyUserWhitelistKey) ?? []
-            )
+            ))
             defaults.set(Array(migrated).sorted(), forKey: whitelistKey)
             return migrated
         }
         set {
-            defaults.set(Array(newValue).sorted(), forKey: whitelistKey)
+            defaults.set(Array(Self.userEditableBundleIDs(from: newValue)).sorted(), forKey: whitelistKey)
         }
     }
 
@@ -60,7 +64,9 @@ public final class WhitelistStore {
 
     public func contains(_ bundleID: String?) -> Bool {
         guard let bundleID else { return true }
-        return bundleIDs.contains(bundleID)
+        let normalizedBundleID = bundleID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedBundleID.isEmpty else { return true }
+        return AppIdentity.isOwnBundleIdentifier(normalizedBundleID) || bundleIDs.contains(normalizedBundleID)
     }
 
     public func isDefaultProtected(_ bundleID: String) -> Bool {
@@ -92,5 +98,9 @@ public final class WhitelistStore {
 
     private var appPaths: [String: String] {
         defaults.dictionary(forKey: appPathsKey) as? [String: String] ?? [:]
+    }
+
+    private static func userEditableBundleIDs(from bundleIDs: Set<String>) -> Set<String> {
+        bundleIDs.filter { !AppIdentity.isOwnBundleIdentifier($0) }
     }
 }

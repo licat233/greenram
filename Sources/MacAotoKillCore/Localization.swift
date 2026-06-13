@@ -535,6 +535,22 @@ public struct Localizer: Equatable {
             .de: "Updates",
             .fr: "Mises à jour"
         ],
+        "settings.about": [
+            .en: "About",
+            .zhHans: "关于",
+            .zhHant: "關於",
+            .ja: "情報",
+            .de: "Info",
+            .fr: "À propos"
+        ],
+        "settings.version": [
+            .en: "Version",
+            .zhHans: "版本",
+            .zhHant: "版本",
+            .ja: "バージョン",
+            .de: "Version",
+            .fr: "Version"
+        ],
         "settings.automaticUpdateReminder": [
             .en: "Automatic update reminders",
             .zhHans: "自动更新提醒",

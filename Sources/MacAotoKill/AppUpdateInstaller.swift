@@ -19,17 +19,17 @@ enum AppUpdateInstallError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .unsupportedAsset:
-            return "The release does not include an installable GreenRAM zip archive."
+            return "The release does not include an installable GreenRAM update asset."
         case .downloadFailed(let message):
-            return "The update archive could not be downloaded. \(message)"
+            return "The update asset could not be downloaded. \(message)"
         case .appIsNotBundled:
             return "GreenRAM is not running from an app bundle."
         case .installLocationNotWritable(let path):
             return "GreenRAM cannot replace the app at \(path). Move it to a writable location or install manually."
         case .extractionFailed(let output):
-            return "The update archive could not be extracted. \(output)"
+            return "The update asset could not be prepared. \(output)"
         case .noApplicationBundleFound:
-            return "The update archive does not contain a macOS app bundle."
+            return "The update asset does not contain a macOS app bundle."
         case .invalidDownloadedBundleIdentifier(let bundleIdentifier):
             return "The downloaded app has the wrong Bundle ID: \(bundleIdentifier ?? "unknown")."
         case .invalidDownloadedVersion(let version):
@@ -72,8 +72,12 @@ struct AppUpdateInstaller {
         }
         try FileManager.default.moveItem(at: downloadedArchiveURL, to: archiveURL)
 
-        try await extractArchive(at: archiveURL, to: extractionURL)
-        let downloadedAppURL = try findApplicationBundle(in: extractionURL)
+        let downloadedAppURL = try await prepareDownloadedApp(
+            from: archiveURL,
+            kind: info.downloadKind,
+            extractionURL: extractionURL,
+            workRoot: workRoot
+        )
         try await validateDownloadedApp(downloadedAppURL, expectedLatestVersion: info.latestVersion)
 
         let installerScriptURL = workRoot.appendingPathComponent("install-greenram-update.sh", isDirectory: false)
@@ -98,11 +102,96 @@ struct AppUpdateInstaller {
         return fileURL
     }
 
+    private func prepareDownloadedApp(
+        from archiveURL: URL,
+        kind: AppUpdateDownloadKind,
+        extractionURL: URL,
+        workRoot: URL
+    ) async throws -> URL {
+        switch kind {
+        case .applicationZipArchive:
+            try await extractArchive(at: archiveURL, to: extractionURL)
+            return try findApplicationBundle(in: extractionURL)
+        case .diskImage:
+            return try await copyApplicationBundleFromDiskImage(
+                at: archiveURL,
+                to: extractionURL,
+                workRoot: workRoot
+            )
+        case .other:
+            throw AppUpdateInstallError.unsupportedAsset
+        }
+    }
+
     private func extractArchive(at archiveURL: URL, to destinationURL: URL) async throws {
         do {
             _ = try await Self.runProcess(
                 executablePath: "/usr/bin/ditto",
                 arguments: ["-x", "-k", archiveURL.path, destinationURL.path]
+            )
+        } catch let error as ProcessExecutionError {
+            throw AppUpdateInstallError.extractionFailed(error.localizedDescription)
+        } catch {
+            throw AppUpdateInstallError.extractionFailed(error.localizedDescription)
+        }
+    }
+
+    private func copyApplicationBundleFromDiskImage(
+        at diskImageURL: URL,
+        to destinationURL: URL,
+        workRoot: URL
+    ) async throws -> URL {
+        let mountURL = workRoot.appendingPathComponent("MountedDMG", isDirectory: true)
+        try FileManager.default.createDirectory(at: mountURL, withIntermediateDirectories: true)
+
+        do {
+            _ = try await Self.runProcess(
+                executablePath: "/usr/bin/hdiutil",
+                arguments: ["attach", "-nobrowse", "-readonly", "-mountpoint", mountURL.path, diskImageURL.path]
+            )
+        } catch let error as ProcessExecutionError {
+            throw AppUpdateInstallError.extractionFailed(error.localizedDescription)
+        } catch {
+            throw AppUpdateInstallError.extractionFailed(error.localizedDescription)
+        }
+
+        do {
+            let mountedAppURL = try findApplicationBundle(in: mountURL)
+            let copiedAppURL = destinationURL.appendingPathComponent(mountedAppURL.lastPathComponent, isDirectory: true)
+            if FileManager.default.fileExists(atPath: copiedAppURL.path) {
+                try FileManager.default.removeItem(at: copiedAppURL)
+            }
+            try await copyApplicationBundle(from: mountedAppURL, to: copiedAppURL)
+            try await detachDiskImage(at: mountURL)
+            return copiedAppURL
+        } catch {
+            try? await detachDiskImage(at: mountURL)
+            throw error
+        }
+    }
+
+    private func copyApplicationBundle(from sourceURL: URL, to destinationURL: URL) async throws {
+        do {
+            _ = try await Self.runProcess(
+                executablePath: "/usr/bin/ditto",
+                arguments: ["--noqtn", sourceURL.path, destinationURL.path]
+            )
+            _ = try? await Self.runProcess(
+                executablePath: "/usr/bin/xattr",
+                arguments: ["-dr", "com.apple.quarantine", destinationURL.path]
+            )
+        } catch let error as ProcessExecutionError {
+            throw AppUpdateInstallError.extractionFailed(error.localizedDescription)
+        } catch {
+            throw AppUpdateInstallError.extractionFailed(error.localizedDescription)
+        }
+    }
+
+    private func detachDiskImage(at mountURL: URL) async throws {
+        do {
+            _ = try await Self.runProcess(
+                executablePath: "/usr/bin/hdiutil",
+                arguments: ["detach", mountURL.path]
             )
         } catch let error as ProcessExecutionError {
             throw AppUpdateInstallError.extractionFailed(error.localizedDescription)
@@ -182,13 +271,34 @@ struct AppUpdateInstaller {
             throw AppUpdateInstallError.invalidDownloadedTeamIdentifier(teamIdentifier)
         }
 
+        try await assessDownloadedAppNotarization(appURL)
+    }
+
+    private func assessDownloadedAppNotarization(_ appURL: URL) async throws {
         do {
             _ = try await Self.runProcess(
                 executablePath: "/usr/sbin/spctl",
                 arguments: ["--assess", "--type", "execute", "--verbose=4", appURL.path]
             )
-        } catch let error as ProcessExecutionError {
-            throw AppUpdateInstallError.notarizationAssessmentFailed(error.localizedDescription)
+            return
+        } catch let spctlError as ProcessExecutionError {
+            do {
+                _ = try await Self.runProcess(
+                    executablePath: "/usr/bin/syspolicy_check",
+                    arguments: ["distribution", appURL.path]
+                )
+                return
+            } catch let syspolicyError as ProcessExecutionError {
+                let output = [spctlError.localizedDescription, syspolicyError.localizedDescription]
+                    .filter { !$0.isEmpty }
+                    .joined(separator: " ")
+                throw AppUpdateInstallError.notarizationAssessmentFailed(output)
+            } catch {
+                let output = [spctlError.localizedDescription, error.localizedDescription]
+                    .filter { !$0.isEmpty }
+                    .joined(separator: " ")
+                throw AppUpdateInstallError.notarizationAssessmentFailed(output)
+            }
         } catch {
             throw AppUpdateInstallError.notarizationAssessmentFailed(error.localizedDescription)
         }
@@ -245,7 +355,8 @@ struct AppUpdateInstaller {
             return (fileName as NSString).lastPathComponent
         }
         let fallback = info.downloadURL.lastPathComponent.trimmingCharacters(in: .whitespacesAndNewlines)
-        return fallback.isEmpty ? "GreenRAM-\(info.latestVersion).zip" : (fallback as NSString).lastPathComponent
+        let fallbackExtension = info.downloadKind == .diskImage ? "dmg" : "zip"
+        return fallback.isEmpty ? "GreenRAM-\(info.latestVersion).\(fallbackExtension)" : (fallback as NSString).lastPathComponent
     }
 
     private static func runProcess(executablePath: String, arguments: [String]) async throws -> String {

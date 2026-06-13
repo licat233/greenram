@@ -251,6 +251,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         else {
             return
         }
+        guard !AppIdentity.isOwnBundleIdentifier(bundleID) else { return }
 
         let appName = app.localizedName ?? bundleID
         let item: NSMenuItem
@@ -652,6 +653,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
     @objc private func addWhitelistItem(_ sender: NSMenuItem) {
         guard let bundleID = sender.representedObject as? String else { return }
+        guard !AppIdentity.isOwnBundleIdentifier(bundleID) else { return }
         settingsStore.setMinimumBackgroundDuration(nil, for: bundleID)
         whitelistStore.add(bundleID)
         eventLog.append(localizer.t("event.addedWhitelist", bundleID))
@@ -660,6 +662,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
     @objc private func removeWhitelistItem(_ sender: NSMenuItem) {
         guard let bundleID = sender.representedObject as? String else { return }
+        guard !AppIdentity.isOwnBundleIdentifier(bundleID) else { return }
         whitelistStore.remove(bundleID)
         eventLog.append(localizer.t("event.removedWhitelist", bundleID))
         refreshSnapshot(performAutomaticRelease: false)

@@ -20,6 +20,18 @@ final class WhitelistStoreTests: XCTestCase {
         XCTAssertFalse(store.allBundleIDs.contains("com.apple.finder"))
     }
 
+    func testOwnAppBundleIDIsAlwaysWhitelistedButNotEditable() {
+        let (store, defaults, suiteName) = makeStore()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        store.add(AppIdentity.bundleIdentifier)
+        XCTAssertTrue(store.contains(AppIdentity.bundleIdentifier))
+        XCTAssertFalse(store.allBundleIDs.contains(AppIdentity.bundleIdentifier))
+
+        store.remove(AppIdentity.bundleIdentifier)
+        XCTAssertTrue(store.contains(AppIdentity.bundleIdentifier))
+    }
+
     func testMigratesLegacyUserWhitelistIntoEditableList() {
         let suiteName = "milu.greenram.tests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

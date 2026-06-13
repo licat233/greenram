@@ -27,6 +27,7 @@ struct SettingsView: View {
                 rulesSummarySection
                 languageSection
                 updateSection
+                aboutSection
                 logSection
                 resetSection
             }
@@ -209,6 +210,20 @@ struct SettingsView: View {
             hintRow(localizer.t("settings.automaticUpdateReminderHint"))
         } header: {
             sectionHeader(localizer.t("settings.updates"), systemImage: "arrow.down.circle")
+        }
+    }
+
+    private var aboutSection: some View {
+        Section {
+            LabeledContent {
+                Text(state.appVersion)
+                    .font(.system(.body, design: .rounded).weight(.semibold))
+                    .foregroundStyle(.secondary)
+            } label: {
+                Text(localizer.t("settings.version"))
+            }
+        } header: {
+            sectionHeader(localizer.t("settings.about"), systemImage: "info.circle")
         }
     }
 

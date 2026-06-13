@@ -69,7 +69,7 @@ GreenRAM never quits:
 ## Download
 
 Download the latest signed and notarized DMG from the [Releases](../../releases) page.
-Automatic in-app updates use the signed and notarized `GreenRAM-<version>.zip` app archive attached to the same release.
+Automatic in-app updates prefer the signed and notarized `GreenRAM-<version>.app.zip` app archive attached to the same release.
 
 ## Build
 

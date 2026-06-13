@@ -4,6 +4,14 @@
 
 All notable GreenRAM release changes are recorded here.
 
+## v0.11.1 - 2026-06-13
+
+- Kept in-app automatic updates on the signed and notarized `.app.zip` release asset.
+- Added DMG installation support as an automatic-update fallback when a zip asset is unavailable.
+- Added a Gatekeeper assessment fallback for automatic updates when `spctl` reports a transient system error.
+- Added the current GreenRAM version to Settings.
+- Prevented GreenRAM from being added to cleanup rules or being targeted by cleanup.
+
 ## v0.11.0 - 2026-06-13
 
 - Added one-click in-app updates from GitHub Releases using the signed and notarized app zip asset.

@@ -20,12 +20,16 @@ final class SettingsViewModel: StateViewModel<SettingsState> {
 
     var canAddWhitelistBundleID: Bool {
         let bundleID = normalizedNewWhitelistBundleID
-        return !bundleID.isEmpty && !whitelistBundleIDs.contains(bundleID)
+        return !bundleID.isEmpty
+            && !AppIdentity.isOwnBundleIdentifier(bundleID)
+            && !whitelistBundleIDs.contains(bundleID)
     }
 
     var canAddIdleTimeBundleID: Bool {
         let bundleID = normalizedNewIdleTimeBundleID
-        return !bundleID.isEmpty && !idleTimeBundleIDs.contains(bundleID)
+        return !bundleID.isEmpty
+            && !AppIdentity.isOwnBundleIdentifier(bundleID)
+            && !idleTimeBundleIDs.contains(bundleID)
     }
 
     init(
@@ -253,6 +257,7 @@ final class SettingsViewModel: StateViewModel<SettingsState> {
             else {
                 continue
             }
+            guard !AppIdentity.isOwnBundleIdentifier(bundleID) else { continue }
 
             let oldDuration = settingsStore.minimumBackgroundDurationsByBundleID[bundleID]
             let newDuration = state.minimumBackgroundMinutes * 60
@@ -283,6 +288,7 @@ final class SettingsViewModel: StateViewModel<SettingsState> {
             else {
                 continue
             }
+            guard !AppIdentity.isOwnBundleIdentifier(bundleID) else { continue }
 
             let wasAlreadyWhitelisted = whitelistStore.contains(bundleID)
             if settingsStore.minimumBackgroundDurationsByBundleID[bundleID] != nil {
@@ -327,6 +333,7 @@ final class SettingsViewModel: StateViewModel<SettingsState> {
             swapLimitGB: clampedSwapLimitGB(Double(settingsStore.swapLimitBytes) / Double(1024 * 1024 * 1024)),
             minimumBackgroundMinutes: settingsStore.minimumBackgroundDuration / 60,
             automaticUpdateReminderEnabled: settingsStore.automaticUpdateReminderEnabled,
+            appVersion: AppIdentity.currentVersion,
             appIdleTimeItems: SettingsAppInfoResolver.makeIdleTimeItems(from: idleTimeBundleIDs, store: whitelistStore),
             whitelistItems: SettingsAppInfoResolver.makeWhitelistItems(from: whitelistBundleIDs, store: whitelistStore),
             newIdleTimeBundleID: newIdleTimeBundleID,

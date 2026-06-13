@@ -26,7 +26,7 @@ final class AppUpdateCheckerTests: XCTestCase {
         XCTAssertTrue(info.canInstallAutomatically)
     }
 
-    func testDiskImageUpdateCannotInstallAutomatically() {
+    func testDiskImageUpdateCanInstallAutomatically() {
         let info = AppUpdateInfo(
             currentVersion: "0.1.10",
             latestVersion: "0.1.11",
@@ -36,6 +36,6 @@ final class AppUpdateCheckerTests: XCTestCase {
             downloadKind: .diskImage
         )
 
-        XCTAssertFalse(info.canInstallAutomatically)
+        XCTAssertTrue(info.canInstallAutomatically)
     }
 }

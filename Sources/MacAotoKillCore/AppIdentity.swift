@@ -10,10 +10,21 @@ public enum AppIdentity {
         "dev.dontbesilent.GreenRAM",
         "dev.dontbesilent.MacAotoKill"
     ]
+    public static var ownBundleIdentifiers: Set<String> {
+        Set([bundleIdentifier] + legacyBundleIdentifiers)
+    }
 
     public static var currentVersion: String {
         (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String)
             ?? "0.0.0"
+    }
+
+    public static func isOwnBundleIdentifier(_ bundleIdentifier: String?) -> Bool {
+        guard let bundleIdentifier = bundleIdentifier?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !bundleIdentifier.isEmpty else {
+            return false
+        }
+        return ownBundleIdentifiers.contains(bundleIdentifier)
     }
 }
 
