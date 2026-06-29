@@ -4,6 +4,10 @@
 
 All notable GreenRAM release changes are recorded here.
 
+## v0.12.1 - 2026-06-29
+
+- Refined the app icon for macOS 13-15 by adding transparent padding and rounded corners to the legacy `.icns` asset.
+
 ## v0.12.0 - 2026-06-20
 
 - Separated Auto-Quit Apps from per-app Auto-Quit thresholds. Existing custom-time rules migrate into Auto-Quit Apps once to preserve upgrade behavior.
