@@ -169,7 +169,8 @@ public final class MemoryPolicyEngine {
     }
 
     public func decision(for app: AppRuntimeState, now: Date = Date()) -> CleanupDecision {
-        let group: CleanupRuleGroup = configuration.isAutoQuitApp(app.bundleID) ? .autoQuit : .ordinary
+        let isAutoQuitApp = configuration.isAutoQuitApp(app.bundleID)
+        let group: CleanupRuleGroup = isAutoQuitApp ? .autoQuit : .ordinary
         let threshold = configuration.backgroundDurationThreshold(for: app.bundleID)
         let duration = app.backgroundDuration(now: now)
 
