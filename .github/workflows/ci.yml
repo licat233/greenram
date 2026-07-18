@@ -31,51 +31,74 @@ jobs:
       - name: Run tests
         run: swift test
 
-      - name: Build Universal 2 release
+      - name: Build architecture releases
         run: |
           swift build -c release --arch arm64 --scratch-path .build-arm64
           swift build -c release --arch x86_64 --scratch-path .build-x86_64
+          cp .build-arm64/arm64-apple-macosx/release/GreenRAM "$RUNNER_TEMP/GreenRAM-arm64"
+          cp .build-x86_64/x86_64-apple-macosx/release/GreenRAM "$RUNNER_TEMP/GreenRAM-x86_64"
           lipo -create \
-            .build-arm64/arm64-apple-macosx/release/GreenRAM \
-            .build-x86_64/x86_64-apple-macosx/release/GreenRAM \
-            -output "$RUNNER_TEMP/GreenRAM"
-          lipo -info "$RUNNER_TEMP/GreenRAM"
+            "$RUNNER_TEMP/GreenRAM-arm64" \
+            "$RUNNER_TEMP/GreenRAM-x86_64" \
+            -output "$RUNNER_TEMP/GreenRAM-universal"
+          test "$(lipo -archs "$RUNNER_TEMP/GreenRAM-arm64")" = "arm64"
+          test "$(lipo -archs "$RUNNER_TEMP/GreenRAM-x86_64")" = "x86_64"
+          lipo -verify_arch arm64 x86_64 "$RUNNER_TEMP/GreenRAM-universal"
 
-      - name: Assemble Universal 2 test app
+      - name: Assemble signed app archives
         run: |
-          APP_ROOT="$RUNNER_TEMP/GreenRAM.app"
-          mkdir -p "$APP_ROOT/Contents/MacOS" "$APP_ROOT/Contents/Resources"
-          cp "$RUNNER_TEMP/GreenRAM" "$APP_ROOT/Contents/MacOS/GreenRAM"
-          cp Packaging/GreenRAM-Info.plist "$APP_ROOT/Contents/Info.plist"
-          cp Packaging/GreenRAM.icns "$APP_ROOT/Contents/Resources/GreenRAM.icns"
-          codesign --force --deep --sign - "$APP_ROOT"
-          ditto -c -k --keepParent "$APP_ROOT" "$RUNNER_TEMP/GreenRAM-0.13.0-test.app.zip"
-          shasum -a 256 "$RUNNER_TEMP/GreenRAM-0.13.0-test.app.zip" > "$RUNNER_TEMP/GreenRAM-0.13.0-test.app.zip.sha256"
+          package_app() {
+            binary="$1"
+            label="$2"
+            package_root="$RUNNER_TEMP/package-$label"
+            app_root="$package_root/GreenRAM.app"
+            archive="$RUNNER_TEMP/GreenRAM-0.13.0-$label.app.zip"
 
-      - name: Upload test app
+            mkdir -p "$app_root/Contents/MacOS" "$app_root/Contents/Resources"
+            cp "$binary" "$app_root/Contents/MacOS/GreenRAM"
+            cp Packaging/GreenRAM-Info.plist "$app_root/Contents/Info.plist"
+            cp Packaging/GreenRAM.icns "$app_root/Contents/Resources/GreenRAM.icns"
+            codesign --force --deep --sign - "$app_root"
+            codesign --verify --deep --strict "$app_root"
+            ditto -c -k --keepParent "$app_root" "$archive"
+            shasum -a 256 "$archive" > "$archive.sha256"
+          }
+
+          package_app "$RUNNER_TEMP/GreenRAM-arm64" "Apple-Silicon"
+          package_app "$RUNNER_TEMP/GreenRAM-x86_64" "Intel"
+          package_app "$RUNNER_TEMP/GreenRAM-universal" "Universal-2"
+
+      - name: Upload test apps
         uses: actions/upload-artifact@v4
         with:
-          name: GreenRAM-0.13.0-test
+          name: GreenRAM-0.13.0-macOS
           path: |
-            ${{ runner.temp }}/GreenRAM-0.13.0-test.app.zip
-            ${{ runner.temp }}/GreenRAM-0.13.0-test.app.zip.sha256
+            ${{ runner.temp }}/GreenRAM-0.13.0-*.app.zip
+            ${{ runner.temp }}/GreenRAM-0.13.0-*.app.zip.sha256
           if-no-files-found: error
           retention-days: 14
 
       - name: Publish personal-use GitHub Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.head_ref == 'agent/separate-architecture-packages')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v0.13.0"
+          NOTES="Personal-use macOS 13+ builds. Choose Apple-Silicon for M1/M2/M3/M4 Macs, Intel for Intel Macs, or Universal-2 for either architecture. These apps are ad-hoc signed and are not Apple-notarized. After copying GreenRAM.app to /Applications, first launch may require: xattr -dr com.apple.quarantine /Applications/GreenRAM.app"
+
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $TAG already exists; leaving it unchanged."
+            gh release upload "$TAG" \
+              "$RUNNER_TEMP"/GreenRAM-0.13.0-*.app.zip \
+              "$RUNNER_TEMP"/GreenRAM-0.13.0-*.app.zip.sha256 \
+              --clobber \
+              --repo "$GITHUB_REPOSITORY"
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --title "GreenRAM v0.13.0 (Personal Use)" --notes "$NOTES"
           else
             gh release create "$TAG" \
-              "$RUNNER_TEMP/GreenRAM-0.13.0-test.app.zip" \
-              "$RUNNER_TEMP/GreenRAM-0.13.0-test.app.zip.sha256" \
+              "$RUNNER_TEMP"/GreenRAM-0.13.0-*.app.zip \
+              "$RUNNER_TEMP"/GreenRAM-0.13.0-*.app.zip.sha256 \
               --repo "$GITHUB_REPOSITORY" \
               --target "$GITHUB_SHA" \
               --title "GreenRAM v0.13.0 (Personal Use)" \
-              --notes "Universal 2 build for the repository owner's personal Apple Silicon and Intel Macs. The app is ad-hoc signed and is not Apple-notarized. After copying GreenRAM.app to /Applications, first launch may require: xattr -dr com.apple.quarantine /Applications/GreenRAM.app"
+              --notes "$NOTES"
           fi
