@@ -31,5 +31,30 @@ jobs:
       - name: Run tests
         run: swift test
 
-      - name: Build release
-        run: swift build -c release
+      - name: Build Universal 2 release
+        run: |
+          swift build -c release --arch arm64 --scratch-path .build-arm64
+          swift build -c release --arch x86_64 --scratch-path .build-x86_64
+          lipo -create \
+            .build-arm64/arm64-apple-macosx/release/GreenRAM \
+            .build-x86_64/x86_64-apple-macosx/release/GreenRAM \
+            -output "$RUNNER_TEMP/GreenRAM"
+          lipo -info "$RUNNER_TEMP/GreenRAM"
+
+      - name: Assemble Universal 2 test app
+        run: |
+          APP_ROOT="$RUNNER_TEMP/GreenRAM.app"
+          mkdir -p "$APP_ROOT/Contents/MacOS" "$APP_ROOT/Contents/Resources"
+          cp "$RUNNER_TEMP/GreenRAM" "$APP_ROOT/Contents/MacOS/GreenRAM"
+          cp Packaging/GreenRAM-Info.plist "$APP_ROOT/Contents/Info.plist"
+          cp Packaging/GreenRAM.icns "$APP_ROOT/Contents/Resources/GreenRAM.icns"
+          codesign --force --deep --sign - "$APP_ROOT"
+          ditto -c -k --keepParent "$APP_ROOT" "$RUNNER_TEMP/GreenRAM-0.13.0-test.app.zip"
+
+      - name: Upload test app
+        uses: actions/upload-artifact@v4
+        with:
+          name: GreenRAM-0.13.0-test
+          path: ${{ runner.temp }}/GreenRAM-0.13.0-test.app.zip
+          if-no-files-found: error
+          retention-days: 14

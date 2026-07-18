@@ -4,7 +4,7 @@
 
 All notable GreenRAM release changes are recorded here.
 
-## Unreleased
+## v0.13.0 - 2026-07-17
 
 - Changed automatic cleanup to request a normal app quit instead of immediately force terminating eligible apps.
 - Added macOS memory-pressure events as an ordinary-app cleanup gate alongside the existing RAM, Swap, and per-app limits.
