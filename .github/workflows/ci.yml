@@ -7,7 +7,7 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: macos-ci-${{ github.workflow }}-${{ github.ref }}
@@ -50,11 +50,32 @@ jobs:
           cp Packaging/GreenRAM.icns "$APP_ROOT/Contents/Resources/GreenRAM.icns"
           codesign --force --deep --sign - "$APP_ROOT"
           ditto -c -k --keepParent "$APP_ROOT" "$RUNNER_TEMP/GreenRAM-0.13.0-test.app.zip"
+          shasum -a 256 "$RUNNER_TEMP/GreenRAM-0.13.0-test.app.zip" > "$RUNNER_TEMP/GreenRAM-0.13.0-test.app.zip.sha256"
 
       - name: Upload test app
         uses: actions/upload-artifact@v4
         with:
           name: GreenRAM-0.13.0-test
-          path: ${{ runner.temp }}/GreenRAM-0.13.0-test.app.zip
+          path: |
+            ${{ runner.temp }}/GreenRAM-0.13.0-test.app.zip
+            ${{ runner.temp }}/GreenRAM-0.13.0-test.app.zip.sha256
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish personal-use GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="v0.13.0"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; leaving it unchanged."
+          else
+            gh release create "$TAG" \
+              "$RUNNER_TEMP/GreenRAM-0.13.0-test.app.zip" \
+              "$RUNNER_TEMP/GreenRAM-0.13.0-test.app.zip.sha256" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "GreenRAM v0.13.0 (Personal Use)" \
+              --notes "Universal 2 build for the repository owner's personal Apple Silicon and Intel Macs. The app is ad-hoc signed and is not Apple-notarized. After copying GreenRAM.app to /Applications, first launch may require: xattr -dr com.apple.quarantine /Applications/GreenRAM.app"
+          fi
