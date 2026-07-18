@@ -138,9 +138,9 @@ final class MemoryPolicyEngineTests: XCTestCase {
         let engine = MemoryPolicyEngine(
             configuration: MemoryPolicyConfiguration(
                 minimumBackgroundDuration: 30 * 60,
-                minimumBackgroundDurationsByBundleID: ["test.protected": 10 * 60],
+                minimumBackgroundDurationsByBundleID: ["test.protected": TimeInterval(10 * 60)],
                 autoQuitBundleIDs: ["test.protected"],
-                memoryLimitsByBundleID: ["test.protected": 512 * 1024 * 1024],
+                memoryLimitsByBundleID: ["test.protected": UInt64(512 * 1024 * 1024)],
                 isMemoryLimitExceeded: true
             ),
             terminator: TerminatorSpy(),
@@ -235,8 +235,8 @@ final class MemoryPolicyEngineTests: XCTestCase {
             configuration: MemoryPolicyConfiguration(
                 minimumBackgroundDuration: 30 * 60,
                 minimumBackgroundDurationsByBundleID: [
-                    "test.short": 10 * 60,
-                    "test.long": 60 * 60
+                    "test.short": TimeInterval(10 * 60),
+                    "test.long": TimeInterval(60 * 60)
                 ],
                 autoQuitBundleIDs: ["test.short", "test.long"]
             ),
@@ -285,8 +285,8 @@ final class MemoryPolicyEngineTests: XCTestCase {
             configuration: MemoryPolicyConfiguration(
                 minimumBackgroundDuration: 30 * 60,
                 minimumBackgroundDurationsByBundleID: [
-                    "test.ordinary": 10 * 60,
-                    "test.auto-short": 10 * 60
+                    "test.ordinary": TimeInterval(10 * 60),
+                    "test.auto-short": TimeInterval(10 * 60)
                 ],
                 autoQuitBundleIDs: ["test.auto-short"]
             ),
@@ -297,8 +297,8 @@ final class MemoryPolicyEngineTests: XCTestCase {
             configuration: MemoryPolicyConfiguration(
                 minimumBackgroundDuration: 30 * 60,
                 minimumBackgroundDurationsByBundleID: [
-                    "test.ordinary": 10 * 60,
-                    "test.auto-short": 10 * 60
+                    "test.ordinary": TimeInterval(10 * 60),
+                    "test.auto-short": TimeInterval(10 * 60)
                 ],
                 autoQuitBundleIDs: ["test.auto-short"],
                 isMemoryLimitExceeded: true
@@ -335,7 +335,7 @@ final class MemoryPolicyEngineTests: XCTestCase {
         let engine = MemoryPolicyEngine(
             configuration: MemoryPolicyConfiguration(
                 minimumBackgroundDuration: 30 * 60,
-                memoryLimitsByBundleID: ["test.memory": 1_024 * 1024 * 1024]
+                memoryLimitsByBundleID: ["test.memory": UInt64(1_024 * 1024 * 1024)]
             ),
             terminator: TerminatorSpy(),
             logger: LoggerSpy()
@@ -357,8 +357,8 @@ final class MemoryPolicyEngineTests: XCTestCase {
         let engine = MemoryPolicyEngine(
             configuration: MemoryPolicyConfiguration(
                 minimumBackgroundDuration: 30 * 60,
-                minimumBackgroundDurationsByBundleID: ["test.short-memory": 10 * 60],
-                memoryLimitsByBundleID: ["test.short-memory": 1_024 * 1024 * 1024]
+                minimumBackgroundDurationsByBundleID: ["test.short-memory": TimeInterval(10 * 60)],
+                memoryLimitsByBundleID: ["test.short-memory": UInt64(1_024 * 1024 * 1024)]
             ),
             terminator: TerminatorSpy(),
             logger: LoggerSpy()
