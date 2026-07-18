@@ -2,6 +2,11 @@ import XCTest
 @testable import MacAotoKillCore
 
 final class AppUpdateCheckerTests: XCTestCase {
+    func testReleaseRepositoryMatchesCanonicalProject() {
+        XCTAssertEqual(AppIdentity.releaseRepositoryOwner, "licat233")
+        XCTAssertEqual(AppIdentity.releaseRepositoryName, "greenram")
+    }
+
     func testReleaseVersionIgnoresLeadingV() {
         XCTAssertEqual(AppReleaseVersion("v0.1.8"), AppReleaseVersion("0.1.8"))
         XCTAssertEqual(AppReleaseVersion("V0.1.8"), AppReleaseVersion("0.1.8"))

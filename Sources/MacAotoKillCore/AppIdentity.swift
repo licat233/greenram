@@ -3,7 +3,7 @@ import Foundation
 public enum AppIdentity {
     public static let name = "GreenRAM"
     public static let bundleIdentifier = "milu.greenram"
-    public static let releaseRepositoryOwner = "lwj1994"
+    public static let releaseRepositoryOwner = "licat233"
     public static let releaseRepositoryName = "greenram"
     public static let releaseTeamIdentifier = "66NB8SX5ZT"
     public static let legacyBundleIdentifiers = [
