@@ -43,7 +43,7 @@ jobs:
             -output "$RUNNER_TEMP/GreenRAM-universal"
           test "$(lipo -archs "$RUNNER_TEMP/GreenRAM-arm64")" = "arm64"
           test "$(lipo -archs "$RUNNER_TEMP/GreenRAM-x86_64")" = "x86_64"
-          lipo -verify_arch arm64 x86_64 "$RUNNER_TEMP/GreenRAM-universal"
+          lipo "$RUNNER_TEMP/GreenRAM-universal" -verify_arch arm64 x86_64
 
       - name: Assemble signed app archives
         run: |
