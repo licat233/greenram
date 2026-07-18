@@ -63,7 +63,7 @@ jobs:
           retention-days: 14
 
       - name: Publish personal-use GitHub Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.head_ref == 'agent/publish-v0.13.0')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -75,7 +75,7 @@ jobs:
               "$RUNNER_TEMP/GreenRAM-0.13.0-test.app.zip" \
               "$RUNNER_TEMP/GreenRAM-0.13.0-test.app.zip.sha256" \
               --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" \
+              --target "e41fb03476ec0b8873e89a89e4b843c633e50788" \
               --title "GreenRAM v0.13.0 (Personal Use)" \
               --notes "Universal 2 build for the repository owner's personal Apple Silicon and Intel Macs. The app is ad-hoc signed and is not Apple-notarized. After copying GreenRAM.app to /Applications, first launch may require: xattr -dr com.apple.quarantine /Applications/GreenRAM.app"
           fi
