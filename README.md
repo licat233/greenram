@@ -69,8 +69,15 @@ Whitelist protection also blocks rule assignment: a whitelisted app must be remo
 
 ## Download
 
-Download the latest signed and notarized DMG from the [Releases](../../releases) page.
-Automatic in-app updates prefer the signed and notarized `GreenRAM-<version>.app.zip` app archive attached to the same release.
+Personal-use builds are available from the [Releases](../../releases) page. The v0.13.0 Universal 2 archive supports Apple Silicon and Intel Macs.
+
+The current personal-use archive is ad-hoc signed and is not Apple-notarized. After copying `GreenRAM.app` to `/Applications`, first launch may require:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/GreenRAM.app
+```
+
+A future public distribution and automatic updates should use Developer ID signing and Apple notarization.
 
 ## Build
 
