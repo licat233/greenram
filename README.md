@@ -18,7 +18,8 @@ It is built for a simple case: keep the frontmost app responsive, remove backgro
 
 ## Features
 
-- At-a-glance menu bar health status driven by native macOS Memory Pressure: green, orange, or red for healthy, warning, and critical conditions.\n- Safe “Reduce Memory Pressure” action that confirms and normally quits selected high-memory background apps without claiming to clear Swap.
+- At-a-glance menu bar health status driven by native macOS Memory Pressure: green, orange, or red for healthy, warning, and critical conditions.
+- Safe “Reduce Memory Pressure” action that confirms and normally quits selected high-memory background apps without claiming to clear Swap.
 - RAM status display and a configurable Swap limit.
 - Auto-Quit Apps quit by non-frontmost time only.
 - Ordinary non-whitelisted apps quit after their non-frontmost timeout plus either a system memory gate or their own app memory limit.
