@@ -236,6 +236,15 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         updateItem.image = symbolMenuIcon("arrow.down.circle")
         menu.addItem(updateItem)
 
+        let pressureReliefItem = NSMenuItem(
+            title: localizer.t("menu.reduceMemoryPressure"),
+            action: #selector(reduceMemoryPressure(_:)),
+            keyEquivalent: ""
+        )
+        pressureReliefItem.target = self
+        pressureReliefItem.image = symbolMenuIcon("gauge.with.dots.needle.50percent")
+        menu.addItem(pressureReliefItem)
+
         let releaseItem = NSMenuItem(
             title: localizer.t("menu.releaseNow"),
             action: #selector(releaseNow(_:)),
@@ -514,6 +523,69 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         image.size = NSSize(width: 18, height: 18)
         image.isTemplate = true
         return image
+    }
+
+    @objc private func reduceMemoryPressure(_ sender: NSMenuItem) {
+        refreshSnapshot(performAutomaticRelease: false)
+
+        guard memoryPressureLevel != .normal else {
+            let alert = NSAlert()
+            alert.alertStyle = .informational
+            alert.icon = nil
+            alert.messageText = localizer.t("pressureRelief.notNeededTitle")
+            alert.informativeText = localizer.t("pressureRelief.notNeededMessage")
+            alert.addButton(withTitle: localizer.t("update.ok"))
+            NSApp.activate(ignoringOtherApps: true)
+            alert.runModal()
+            return
+        }
+
+        let candidates = snapshot
+            .filter {
+                !$0.isFrontmost
+                    && !$0.isWhitelisted
+                    && !AppIdentity.isOwnBundleIdentifier($0.bundleID)
+            }
+            .sorted { $0.memoryBytes > $1.memoryBytes }
+            .prefix(settingsStore.maxAppsPerSweep)
+
+        guard !candidates.isEmpty else {
+            let alert = NSAlert()
+            alert.alertStyle = .informational
+            alert.icon = nil
+            alert.messageText = localizer.t("pressureRelief.noCandidatesTitle")
+            alert.informativeText = localizer.t("pressureRelief.noCandidatesMessage")
+            alert.addButton(withTitle: localizer.t("update.ok"))
+            NSApp.activate(ignoringOtherApps: true)
+            alert.runModal()
+            return
+        }
+
+        let candidateList = candidates
+            .map { "\($0.displayName) (\(ByteFormatter.memory($0.memoryBytes)))" }
+            .joined(separator: "\n")
+        let estimatedBytes = candidates.reduce(UInt64(0)) { $0 + $1.memoryBytes }
+
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.icon = nil
+        alert.messageText = localizer.t("pressureRelief.confirmTitle")
+        alert.informativeText = localizer.t(
+            "pressureRelief.confirmMessage",
+            ByteFormatter.memory(estimatedBytes),
+            candidateList
+        )
+        alert.addButton(withTitle: localizer.t("pressureRelief.continue"))
+        alert.addButton(withTitle: localizer.t("update.later"))
+        NSApp.activate(ignoringOtherApps: true)
+
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        eventLog.append(localizer.t("event.pressureReliefRequested", candidates.count))
+        for app in candidates {
+            _ = actionExecutor.requestQuit(app, forceIfNeeded: false)
+        }
+        refreshSnapshot(performAutomaticRelease: false)
     }
 
     @objc private func releaseNow(_ sender: NSMenuItem) {
