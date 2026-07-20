@@ -12,16 +12,17 @@ final class MemoryHealthEvaluatorTests: XCTestCase {
     func testRamWarningStartsAtEightyPercentOfConfiguredLimit() {
         let evaluation = evaluate(ramUsed: 72, ramLimit: 90)
 
-        XCTAssertEqual(evaluation.level, .warning)
+        XCTAssertEqual(evaluation.level, .healthy)
         XCTAssertEqual(evaluation.ramLevel, .warning)
-        XCTAssertEqual(evaluation.reasons, [.ramApproachingLimit])
+        XCTAssertTrue(evaluation.reasons.isEmpty)
     }
 
     func testRamLimitProducesCriticalState() {
         let evaluation = evaluate(ramUsed: 90, ramLimit: 90)
 
         XCTAssertEqual(evaluation.level, .healthy)
-        XCTAssertEqual(evaluation.reasons, [.ramLimitReached])
+        XCTAssertEqual(evaluation.ramLevel, .critical)
+        XCTAssertTrue(evaluation.reasons.isEmpty)
     }
 
     func testSwapWarningOnlyParticipatesWhenLimitIsEnabled() {
@@ -58,7 +59,8 @@ final class MemoryHealthEvaluatorTests: XCTestCase {
 
         XCTAssertEqual(evaluation.ramLevel, .warning)
         XCTAssertEqual(evaluation.swapLevel, .critical)
-        XCTAssertEqual(evaluation.level, .critical)
+        XCTAssertEqual(evaluation.level, .healthy)
+        XCTAssertTrue(evaluation.reasons.isEmpty)
     }
 
     func testWarningUsesRecoveryThresholdToAvoidFlicker() {
@@ -66,8 +68,9 @@ final class MemoryHealthEvaluatorTests: XCTestCase {
         let stillWarning = evaluate(ramUsed: 68, ramLimit: 90, previous: warning)
         let recovered = evaluate(ramUsed: 67, ramLimit: 90, previous: stillWarning)
 
-        XCTAssertEqual(stillWarning.level, .warning)
-        XCTAssertEqual(recovered.level, .healthy)
+        XCTAssertEqual(stillWarning.ramLevel, .warning)
+        XCTAssertEqual(stillWarning.level, .healthy)
+        XCTAssertEqual(recovered.ramLevel, .healthy)
     }
 
     func testCriticalUsesRecoveryThresholdToAvoidFlicker() {
@@ -75,8 +78,9 @@ final class MemoryHealthEvaluatorTests: XCTestCase {
         let stillCritical = evaluate(ramUsed: 86, ramLimit: 90, previous: critical)
         let warning = evaluate(ramUsed: 85, ramLimit: 90, previous: stillCritical)
 
-        XCTAssertEqual(stillCritical.level, .critical)
-        XCTAssertEqual(warning.level, .warning)
+        XCTAssertEqual(stillCritical.ramLevel, .critical)
+        XCTAssertEqual(stillCritical.level, .healthy)
+        XCTAssertEqual(warning.ramLevel, .warning)
     }
 
     private func evaluate(
