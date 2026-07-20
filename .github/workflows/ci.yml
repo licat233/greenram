@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   build-and-test:
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 15
 
     steps:
@@ -79,7 +79,7 @@ jobs:
           retention-days: 14
 
       - name: Publish personal-use GitHub Release
-        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.head_ref == 'agent/memory-health-status-v014')
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.head_ref == 'agent/fix-v014-ci-release')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
