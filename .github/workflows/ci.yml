@@ -52,7 +52,7 @@ jobs:
             label="$2"
             package_root="$RUNNER_TEMP/package-$label"
             app_root="$package_root/GreenRAM.app"
-            archive="$RUNNER_TEMP/GreenRAM-0.13.0-$label.app.zip"
+            archive="$RUNNER_TEMP/GreenRAM-0.14.0-$label.app.zip"
 
             mkdir -p "$app_root/Contents/MacOS" "$app_root/Contents/Resources"
             cp "$binary" "$app_root/Contents/MacOS/GreenRAM"
@@ -71,34 +71,34 @@ jobs:
       - name: Upload test apps
         uses: actions/upload-artifact@v4
         with:
-          name: GreenRAM-0.13.0-macOS
+          name: GreenRAM-0.14.0-macOS
           path: |
-            ${{ runner.temp }}/GreenRAM-0.13.0-*.app.zip
-            ${{ runner.temp }}/GreenRAM-0.13.0-*.app.zip.sha256
+            ${{ runner.temp }}/GreenRAM-0.14.0-*.app.zip
+            ${{ runner.temp }}/GreenRAM-0.14.0-*.app.zip.sha256
           if-no-files-found: error
           retention-days: 14
 
       - name: Publish personal-use GitHub Release
-        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.head_ref == 'agent/separate-architecture-packages')
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.head_ref == 'agent/memory-health-status-v014')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="v0.13.0"
-          NOTES="Personal-use macOS 13+ builds. Choose Apple-Silicon for M1/M2/M3/M4 Macs, Intel for Intel Macs, or Universal-2 for either architecture. These apps are ad-hoc signed and are not Apple-notarized. After copying GreenRAM.app to /Applications, first launch may require: xattr -dr com.apple.quarantine /Applications/GreenRAM.app"
+          TAG="v0.14.0"
+          NOTES="Adds green, orange, and red menu bar health states for healthy, warning, and critical memory conditions. Personal-use macOS 13+ builds: choose Apple-Silicon for M1/M2/M3/M4 Macs, Intel for Intel Macs, or Universal-2 for either architecture. These apps are ad-hoc signed and are not Apple-notarized. After copying GreenRAM.app to /Applications, first launch may require: xattr -dr com.apple.quarantine /Applications/GreenRAM.app"
 
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" \
-              "$RUNNER_TEMP"/GreenRAM-0.13.0-*.app.zip \
-              "$RUNNER_TEMP"/GreenRAM-0.13.0-*.app.zip.sha256 \
+              "$RUNNER_TEMP"/GreenRAM-0.14.0-*.app.zip \
+              "$RUNNER_TEMP"/GreenRAM-0.14.0-*.app.zip.sha256 \
               --clobber \
               --repo "$GITHUB_REPOSITORY"
-            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --title "GreenRAM v0.13.0 (Personal Use)" --notes "$NOTES"
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --title "GreenRAM v0.14.0 (Personal Use)" --notes "$NOTES"
           else
             gh release create "$TAG" \
-              "$RUNNER_TEMP"/GreenRAM-0.13.0-*.app.zip \
-              "$RUNNER_TEMP"/GreenRAM-0.13.0-*.app.zip.sha256 \
+              "$RUNNER_TEMP"/GreenRAM-0.14.0-*.app.zip \
+              "$RUNNER_TEMP"/GreenRAM-0.14.0-*.app.zip.sha256 \
               --repo "$GITHUB_REPOSITORY" \
               --target "$GITHUB_SHA" \
-              --title "GreenRAM v0.13.0 (Personal Use)" \
+              --title "GreenRAM v0.14.0 (Personal Use)" \
               --notes "$NOTES"
           fi
