@@ -4,6 +4,14 @@
 
 All notable GreenRAM release changes are recorded here.
 
+## v0.14.0 - 2026-07-19
+
+- Added green, orange, and red menu bar states for healthy, warning, and critical memory conditions.
+- Evaluate visual health from RAM, enabled Swap limits, and native macOS memory pressure.
+- Added hysteresis thresholds to prevent the status icon from flickering near warning and critical boundaries.
+- Added localized health status and reason text for all six supported languages.
+- Prefer the Universal 2 archive for automatic in-app updates when architecture-specific packages are also present.
+
 ## v0.13.0 - 2026-07-17
 
 - Changed automatic cleanup to request a normal app quit instead of immediately force terminating eligible apps.

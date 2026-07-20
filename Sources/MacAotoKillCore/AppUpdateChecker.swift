@@ -108,7 +108,8 @@ public struct GitHubReleaseUpdateChecker: Sendable {
             )
         }
 
-        return downloads.first { Self.isPreferredApplicationZip($0) }
+        return downloads.first { Self.isUniversalApplicationZip($0) }
+            ?? downloads.first { Self.isPreferredApplicationZip($0) }
             ?? downloads.first { $0.kind == .applicationZipArchive }
             ?? downloads.first { Self.isPreferredDiskImage($0) }
             ?? downloads.first { $0.kind == .diskImage }
@@ -130,6 +131,14 @@ public struct GitHubReleaseUpdateChecker: Sendable {
             return .diskImage
         }
         return .other
+    }
+
+    private static func isUniversalApplicationZip(_ download: GitHubReleaseDownload) -> Bool {
+        let fileName = (download.name ?? download.url.lastPathComponent).lowercased()
+        return download.kind == .applicationZipArchive
+            && fileName.contains("greenram")
+            && fileName.contains("universal-2")
+            && fileName.hasSuffix(".app.zip")
     }
 
     private static func isPreferredApplicationZip(_ download: GitHubReleaseDownload) -> Bool {

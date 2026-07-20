@@ -103,6 +103,78 @@ public struct Localizer: Equatable {
     }
 
     private static let translations: [String: [AppLanguage: String]] = [
+        "health.healthy": [
+            .en: "Healthy",
+            .zhHans: "健康",
+            .zhHant: "健康",
+            .ja: "健全",
+            .de: "Gesund",
+            .fr: "Sain"
+        ],
+        "health.warning": [
+            .en: "Warning",
+            .zhHans: "警告",
+            .zhHant: "警告",
+            .ja: "警告",
+            .de: "Warnung",
+            .fr: "Alerte"
+        ],
+        "health.critical": [
+            .en: "Critical",
+            .zhHans: "严重",
+            .zhHant: "嚴重",
+            .ja: "深刻",
+            .de: "Kritisch",
+            .fr: "Critique"
+        ],
+        "health.ramApproachingLimit": [
+            .en: "RAM approaching limit",
+            .zhHans: "RAM 接近上限",
+            .zhHant: "RAM 接近上限",
+            .ja: "RAM が上限に接近",
+            .de: "RAM nähert sich dem Limit",
+            .fr: "RAM proche de la limite"
+        ],
+        "health.ramLimitReached": [
+            .en: "RAM limit reached",
+            .zhHans: "RAM 已达到上限",
+            .zhHant: "RAM 已達到上限",
+            .ja: "RAM が上限に到達",
+            .de: "RAM-Limit erreicht",
+            .fr: "Limite RAM atteinte"
+        ],
+        "health.swapApproachingLimit": [
+            .en: "Swap approaching limit",
+            .zhHans: "Swap 接近上限",
+            .zhHant: "Swap 接近上限",
+            .ja: "スワップが上限に接近",
+            .de: "Swap nähert sich dem Limit",
+            .fr: "Swap proche de la limite"
+        ],
+        "health.swapLimitReached": [
+            .en: "Swap limit reached",
+            .zhHans: "Swap 已达到上限",
+            .zhHant: "Swap 已達到上限",
+            .ja: "スワップが上限に到達",
+            .de: "Swap-Limit erreicht",
+            .fr: "Limite Swap atteinte"
+        ],
+        "health.systemPressureWarning": [
+            .en: "System memory pressure warning",
+            .zhHans: "系统内存压力警告",
+            .zhHant: "系統記憶體壓力警告",
+            .ja: "システムメモリプレッシャー警告",
+            .de: "Systemspeicherdruck-Warnung",
+            .fr: "Alerte de pression mémoire système"
+        ],
+        "health.systemPressureCritical": [
+            .en: "System memory pressure critical",
+            .zhHans: "系统内存压力严重",
+            .zhHant: "系統記憶體壓力嚴重",
+            .ja: "システムメモリプレッシャーが深刻",
+            .de: "Kritischer Systemspeicherdruck",
+            .fr: "Pression mémoire système critique"
+        ],
         "pressure.normal": [
             .en: "Normal",
             .zhHans: "正常",
