@@ -71,22 +71,12 @@ public enum MemoryHealthEvaluator {
         }
 
         var reasons: [MemoryHealthReason] = []
-        switch ramLevel {
-        case .healthy: break
-        case .warning: reasons.append(.ramApproachingLimit)
-        case .critical: reasons.append(.ramLimitReached)
-        }
-        switch swapLevel {
-        case .healthy: break
-        case .warning: reasons.append(.swapApproachingLimit)
-        case .critical: reasons.append(.swapLimitReached)
-        }
         if pressure != .normal {
             reasons.append(.systemPressure(pressure))
         }
 
         return MemoryHealthEvaluation(
-            level: max(ramLevel, swapLevel, pressureLevel),
+            // macOS can keep RAM and historical Swap highly utilized while healthy.\n            // The global leaf color therefore follows native Memory Pressure only;\n            // RAM and Swap thresholds remain visible as advisory metric colors.\n            level: pressureLevel,
             ramLevel: ramLevel,
             swapLevel: swapLevel,
             pressureLevel: pressureLevel,
