@@ -335,6 +335,78 @@ public struct Localizer: Equatable {
             .de: "Update wird installiert...",
             .fr: "Installation de la mise à jour..."
         ],
+        "menu.reduceMemoryPressure": [
+            .en: "Reduce Memory Pressure...",
+            .zhHans: "缓解内存压力...",
+            .zhHant: "緩解記憶體壓力...",
+            .ja: "メモリプレッシャーを軽減...",
+            .de: "Speicherdruck reduzieren...",
+            .fr: "Réduire la pression mémoire..."
+        ],
+        "pressureRelief.notNeededTitle": [
+            .en: "No pressure relief needed",
+            .zhHans: "当前无需缓解内存压力",
+            .zhHant: "目前無需緩解記憶體壓力",
+            .ja: "メモリプレッシャーの軽減は不要です",
+            .de: "Keine Reduzierung des Speicherdrucks nötig",
+            .fr: "Aucune réduction de pression nécessaire"
+        ],
+        "pressureRelief.notNeededMessage": [
+            .en: "macOS reports normal memory pressure. Historical Swap may remain allocated and does not need to be cleared.",
+            .zhHans: "macOS 报告内存压力正常。历史 Swap 可能继续保留，无需为了让数字归零而清理。",
+            .zhHant: "macOS 報告記憶體壓力正常。歷史 Swap 可能繼續保留，無需為了讓數字歸零而清理。",
+            .ja: "macOS のメモリプレッシャーは正常です。過去の Swap が残っていても、数値をゼロにするために消去する必要はありません。",
+            .de: "macOS meldet normalen Speicherdruck. Historischer Swap kann belegt bleiben und muss nicht geleert werden.",
+            .fr: "macOS signale une pression mémoire normale. Le Swap historique peut rester alloué et n’a pas besoin d’être vidé."
+        ],
+        "pressureRelief.noCandidatesTitle": [
+            .en: "No safe background apps",
+            .zhHans: "没有可安全退出的后台 App",
+            .zhHant: "沒有可安全結束的背景 App",
+            .ja: "安全に終了できる背景アプリがありません",
+            .de: "Keine sicher beendbaren Hintergrund-Apps",
+            .fr: "Aucune app en arrière-plan sûre à quitter"
+        ],
+        "pressureRelief.noCandidatesMessage": [
+            .en: "Frontmost and protected apps are never selected. Save your work and restart macOS if severe pressure continues.",
+            .zhHans: "前台 App 和受保护 App 永远不会被选择。如果严重压力持续，请保存工作后重新启动 macOS。",
+            .zhHant: "前台 App 和受保護 App 永遠不會被選擇。如果嚴重壓力持續，請儲存工作後重新啟動 macOS。",
+            .ja: "最前面のアプリと保護されたアプリは選択されません。深刻な状態が続く場合は作業を保存して macOS を再起動してください。",
+            .de: "Vordergrund- und geschützte Apps werden nie ausgewählt. Bei anhaltend kritischem Druck Arbeit sichern und macOS neu starten.",
+            .fr: "Les apps au premier plan et protégées ne sont jamais sélectionnées. Si la pression critique persiste, enregistrez votre travail et redémarrez macOS."
+        ],
+        "pressureRelief.confirmTitle": [
+            .en: "Reduce memory pressure?",
+            .zhHans: "缓解内存压力？",
+            .zhHant: "緩解記憶體壓力？",
+            .ja: "メモリプレッシャーを軽減しますか？",
+            .de: "Speicherdruck reduzieren?",
+            .fr: "Réduire la pression mémoire ?"
+        ],
+        "pressureRelief.confirmMessage": [
+            .en: "GreenRAM will ask these background apps to quit normally (up to %@ estimated):\n\n%@\n\nThis reduces active pressure but does not promise to clear Swap.",
+            .zhHans: "GreenRAM 将请求以下后台 App 正常退出（预计最多释放 %@）：\n\n%@\n\n这会缓解当前压力，但不承诺清空 Swap。",
+            .zhHant: "GreenRAM 將請求以下背景 App 正常結束（預計最多釋放 %@）：\n\n%@\n\n這會緩解目前壓力，但不承諾清空 Swap。",
+            .ja: "GreenRAM は次の背景アプリに通常終了を要求します（最大 %@ の見込み）：\n\n%@\n\n現在のプレッシャーを軽減しますが、Swap の消去は保証しません。",
+            .de: "GreenRAM bittet diese Hintergrund-Apps, sich normal zu beenden (geschätzt bis zu %@):\n\n%@\n\nDies reduziert aktiven Druck, garantiert aber keine Swap-Leerung.",
+            .fr: "GreenRAM demandera à ces apps de quitter normalement (jusqu’à %@ estimés) :\n\n%@\n\nCela réduit la pression active sans garantir l’effacement du Swap."
+        ],
+        "pressureRelief.continue": [
+            .en: "Quit Apps",
+            .zhHans: "退出这些 App",
+            .zhHant: "結束這些 App",
+            .ja: "アプリを終了",
+            .de: "Apps beenden",
+            .fr: "Quitter les apps"
+        ],
+        "event.pressureReliefRequested": [
+            .en: "Memory pressure relief requested for %d apps",
+            .zhHans: "已请求 %d 个 App 正常退出以缓解内存压力",
+            .zhHant: "已請求 %d 個 App 正常結束以緩解記憶體壓力",
+            .ja: "%d 個のアプリに終了を要求してメモリプレッシャーを軽減",
+            .de: "Speicherdruck-Reduzierung für %d Apps angefordert",
+            .fr: "Réduction de pression demandée pour %d apps"
+        ],
         "menu.releaseNow": [
             .en: "Quit Eligible Apps Now",
             .zhHans: "立即退出符合规则的 App",
