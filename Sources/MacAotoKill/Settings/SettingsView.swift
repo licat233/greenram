@@ -849,7 +849,7 @@ struct SettingsView: View {
     }
 
     private func statusColor(_ isExceeded: Bool) -> Color {
-        MemoryMetricColor.status(isExceeded)
+        MemoryMetricColor.status(isExceeded ? .critical : .healthy)
     }
 }
 
