@@ -18,7 +18,7 @@ It is built for a simple case: keep the frontmost app responsive, remove backgro
 
 ## Features
 
-- Menu bar memory status with a green/red leaf icon.
+- At-a-glance menu bar health status with a green, orange, or red leaf for healthy, warning, and critical memory conditions.
 - RAM status display and a configurable Swap limit.
 - Auto-Quit Apps quit by non-frontmost time only.
 - Ordinary non-whitelisted apps quit after their non-frontmost timeout plus either a system memory gate or their own app memory limit.
