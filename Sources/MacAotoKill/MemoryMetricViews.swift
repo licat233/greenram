@@ -9,21 +9,25 @@ struct MemoryMetricDisplay {
     let detail: String
     let progress: Double
     let isExceeded: Bool
+    let healthLevel: MemoryHealthLevel
 }
 
 enum MemoryMetricDisplays {
     static func ram(
         snapshot: SystemMemorySnapshot,
         ramLimitPercent: Double,
-        localizer: Localizer
+        localizer: Localizer,
+        healthLevel: MemoryHealthLevel? = nil
     ) -> MemoryMetricDisplay {
-        MemoryMetricDisplay(
+        let isExceeded = snapshot.usedPhysicalPercent >= ramLimitPercent
+        return MemoryMetricDisplay(
             title: localizer.t("settings.ramUsed"),
             systemImage: "memorychip",
             value: "\(ByteFormatter.memory(snapshot.usedPhysicalBytes)) / \(ByteFormatter.memory(snapshot.totalPhysicalBytes))",
             detail: PercentFormatter.compact(snapshot.usedPhysicalPercent),
             progress: snapshot.usedPhysicalPercent / 100,
-            isExceeded: snapshot.usedPhysicalPercent >= ramLimitPercent
+            isExceeded: isExceeded,
+            healthLevel: healthLevel ?? (isExceeded ? .critical : .healthy)
         )
     }
 
@@ -31,7 +35,8 @@ enum MemoryMetricDisplays {
         snapshot: SystemMemorySnapshot,
         swapLimitEnabled: Bool,
         swapLimitBytes: UInt64,
-        localizer: Localizer
+        localizer: Localizer,
+        healthLevel: MemoryHealthLevel? = nil
     ) -> MemoryMetricDisplay {
         let denominator = swapLimitEnabled ? swapLimitBytes : snapshot.swapTotalBytes
 
@@ -43,7 +48,10 @@ enum MemoryMetricDisplays {
                 ? "\(localizer.t("settings.swapLimit")) \(ByteFormatter.memory(swapLimitBytes))"
                 : localizer.t("settings.swapMinimumHint"),
             progress: progress(Double(snapshot.swapUsedBytes), total: Double(denominator)),
-            isExceeded: swapLimitEnabled && snapshot.swapUsedBytes >= swapLimitBytes
+            isExceeded: swapLimitEnabled && snapshot.swapUsedBytes >= swapLimitBytes,
+            healthLevel: healthLevel ?? (
+                swapLimitEnabled && snapshot.swapUsedBytes >= swapLimitBytes ? .critical : .healthy
+            )
         )
     }
 
@@ -60,7 +68,7 @@ struct MemoryMetricSummaryView: View {
     var minHeight: CGFloat = 82
 
     private var color: Color {
-        MemoryMetricColor.status(metric.isExceeded)
+        MemoryMetricColor.status(metric.healthLevel)
     }
 
     var body: some View {
@@ -102,13 +110,13 @@ struct MemoryDashboardMenuContent: View {
 
     let title: String
     let statusText: String
-    let isExceeded: Bool
+    let healthLevel: MemoryHealthLevel
     let icon: NSImage
     let ramMetric: MemoryMetricDisplay
     let swapMetric: MemoryMetricDisplay
 
     private var statusColor: Color {
-        MemoryMetricColor.status(isExceeded)
+        MemoryMetricColor.status(healthLevel)
     }
 
     var body: some View {
@@ -136,18 +144,16 @@ struct MemoryDashboardMenuContent: View {
 
             Spacer(minLength: 12)
 
-            if isExceeded {
-                Text(statusText)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(statusColor)
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 4)
-                    .background(statusColor.opacity(0.12), in: Capsule())
-                    .overlay {
-                        Capsule()
-                            .stroke(statusColor.opacity(0.22), lineWidth: 1)
-                    }
-            }
+            Text(statusText)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(statusColor)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 4)
+                .background(statusColor.opacity(0.12), in: Capsule())
+                .overlay {
+                    Capsule()
+                        .stroke(statusColor.opacity(0.22), lineWidth: 1)
+                }
         }
         .frame(width: Self.width - 32, height: 24, alignment: .center)
     }
@@ -166,8 +172,15 @@ struct MemoryDashboardMenuContent: View {
 }
 
 enum MemoryMetricColor {
-    static func status(_ isExceeded: Bool) -> Color {
-        Color(nsColor: isExceeded ? .systemRed : .systemGreen)
+    static func status(_ level: MemoryHealthLevel) -> Color {
+        switch level {
+        case .healthy:
+            Color(nsColor: .systemGreen)
+        case .warning:
+            Color(nsColor: .systemOrange)
+        case .critical:
+            Color(nsColor: .systemRed)
+        }
     }
 }
 
