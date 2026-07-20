@@ -4,6 +4,15 @@
 
 All notable GreenRAM release changes are recorded here.
 
+## v0.15.0 - 2026-07-20
+
+- Made native macOS Memory Pressure the source of the global green, orange, and red health state.
+- Kept RAM and configured Swap thresholds as advisory metric colors instead of treating high utilization as system distress.
+- Added a safe “Reduce Memory Pressure” action that asks for confirmation, preserves frontmost and protected apps, and requests normal app termination.
+- Explicitly avoids unsupported Swap deletion or forced Swap clearing; historical Swap may remain while memory pressure is healthy.
+- Retained all six UI languages.
+
+
 ## v0.14.0 - 2026-07-19
 
 - Added green, orange, and red menu bar states for healthy, warning, and critical memory conditions.
