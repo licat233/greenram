@@ -71,22 +71,13 @@ public enum MemoryHealthEvaluator {
         }
 
         var reasons: [MemoryHealthReason] = []
-        switch ramLevel {
-        case .healthy: break
-        case .warning: reasons.append(.ramApproachingLimit)
-        case .critical: reasons.append(.ramLimitReached)
-        }
-        switch swapLevel {
-        case .healthy: break
-        case .warning: reasons.append(.swapApproachingLimit)
-        case .critical: reasons.append(.swapLimitReached)
-        }
         if pressure != .normal {
             reasons.append(.systemPressure(pressure))
         }
 
+        // Native Memory Pressure drives the global leaf color. RAM and Swap remain advisory.
         return MemoryHealthEvaluation(
-            level: max(ramLevel, swapLevel, pressureLevel),
+            level: pressureLevel,
             ramLevel: ramLevel,
             swapLevel: swapLevel,
             pressureLevel: pressureLevel,
