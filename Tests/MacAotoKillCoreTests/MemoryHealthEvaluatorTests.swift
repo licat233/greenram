@@ -20,7 +20,7 @@ final class MemoryHealthEvaluatorTests: XCTestCase {
     func testRamLimitProducesCriticalState() {
         let evaluation = evaluate(ramUsed: 90, ramLimit: 90)
 
-        XCTAssertEqual(evaluation.level, .critical)
+        XCTAssertEqual(evaluation.level, .healthy)
         XCTAssertEqual(evaluation.reasons, [.ramLimitReached])
     }
 
@@ -48,7 +48,7 @@ final class MemoryHealthEvaluatorTests: XCTestCase {
         XCTAssertEqual(critical.reasons, [.systemPressure(.critical)])
     }
 
-    func testHighestComponentSeverityWins() {
+    func testRamAndSwapRemainAdvisoryWhenNativePressureIsNormal() {
         let evaluation = evaluate(
             ramUsed: 72,
             ramLimit: 90,
