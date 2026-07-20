@@ -42,6 +42,11 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         snapshot: SystemMemoryMonitor.capture(),
         configuration: MemoryThresholdConfiguration()
     )
+    private var healthEvaluation = MemoryHealthEvaluator.evaluate(
+        snapshot: SystemMemoryMonitor.capture(),
+        configuration: MemoryThresholdConfiguration(),
+        pressure: .normal
+    )
     private var lastAutomaticReleaseAt: Date?
     private let automaticReleaseCooldown: TimeInterval = 60
     private let automaticUpdateCheckInterval: TimeInterval = 24 * 60 * 60
@@ -103,9 +108,16 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
     private func refreshSnapshot(performAutomaticRelease: Bool = false) {
         memorySnapshot = SystemMemoryMonitor.capture()
+        let thresholdConfiguration = makeThresholdConfiguration()
         thresholdEvaluation = MemoryThresholdEvaluator.evaluate(
             snapshot: memorySnapshot,
-            configuration: makeThresholdConfiguration()
+            configuration: thresholdConfiguration
+        )
+        healthEvaluation = MemoryHealthEvaluator.evaluate(
+            snapshot: memorySnapshot,
+            configuration: thresholdConfiguration,
+            pressure: memoryPressureLevel,
+            previous: healthEvaluation
         )
         memoryPolicyEngine.configuration = makePolicyConfiguration()
         snapshot = processMonitor.sample()
@@ -151,10 +163,44 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
     private func updateStatusTitle() {
         let candidateCount = memoryPolicyEngine.candidates(for: snapshot).count
-        statusItem.button?.image = StatusIconFactory.makeImage(isExceeded: isSystemMemoryGateExceeded)
-        statusItem.button?.toolTip = candidateCount > 0
-            ? "\(localizer.t("dashboard.candidates")) · \(candidateCount)"
-            : (isSystemMemoryGateExceeded ? localizer.t("status.exceeded") : localizer.t("status.withinLimits"))
+        statusItem.button?.image = StatusIconFactory.makeImage(level: healthEvaluation.level)
+
+        var tooltipParts = ["GreenRAM", healthStatusText]
+        tooltipParts.append(contentsOf: healthEvaluation.reasons.map(healthReasonText))
+        if candidateCount > 0 {
+            tooltipParts.append("\(localizer.t("dashboard.candidates")): \(candidateCount)")
+        }
+        statusItem.button?.toolTip = tooltipParts.joined(separator: " · ")
+    }
+
+    private var healthStatusText: String {
+        switch healthEvaluation.level {
+        case .healthy:
+            localizer.t("health.healthy")
+        case .warning:
+            localizer.t("health.warning")
+        case .critical:
+            localizer.t("health.critical")
+        }
+    }
+
+    private func healthReasonText(_ reason: MemoryHealthReason) -> String {
+        switch reason {
+        case .ramApproachingLimit:
+            localizer.t("health.ramApproachingLimit")
+        case .ramLimitReached:
+            localizer.t("health.ramLimitReached")
+        case .swapApproachingLimit:
+            localizer.t("health.swapApproachingLimit")
+        case .swapLimitReached:
+            localizer.t("health.swapLimitReached")
+        case .systemPressure(.warning):
+            localizer.t("health.systemPressureWarning")
+        case .systemPressure(.critical):
+            localizer.t("health.systemPressureCritical")
+        case .systemPressure(.normal):
+            localizer.t("health.healthy")
+        }
     }
 
     private func rebuildMenu() {
@@ -223,21 +269,21 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         let thresholdConfiguration = makeThresholdConfiguration()
         let content = MemoryDashboardMenuContent(
             title: "GreenRAM",
-            statusText: isSystemMemoryGateExceeded
-                ? localizer.t("status.exceeded")
-                : localizer.t("status.withinLimits"),
-            isExceeded: isSystemMemoryGateExceeded,
-            icon: StatusIconFactory.makeImage(isExceeded: isSystemMemoryGateExceeded),
+            statusText: healthStatusText,
+            healthLevel: healthEvaluation.level,
+            icon: StatusIconFactory.makeImage(level: healthEvaluation.level),
             ramMetric: MemoryMetricDisplays.ram(
                 snapshot: memorySnapshot,
                 ramLimitPercent: thresholdConfiguration.ramLimitPercent,
-                localizer: localizer
+                localizer: localizer,
+                healthLevel: healthEvaluation.ramLevel
             ),
             swapMetric: MemoryMetricDisplays.swap(
                 snapshot: memorySnapshot,
                 swapLimitEnabled: thresholdConfiguration.swapLimitEnabled,
                 swapLimitBytes: thresholdConfiguration.swapLimitBytes,
-                localizer: localizer
+                localizer: localizer,
+                healthLevel: healthEvaluation.swapLevel
             )
         )
         let hostingView = NSHostingView(rootView: content)
@@ -710,7 +756,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 }
 
 private enum StatusIconFactory {
-    static func makeImage(isExceeded: Bool) -> NSImage {
+    static func makeImage(level: MemoryHealthLevel) -> NSImage {
         let size = NSSize(width: 22, height: 22)
         let image = NSImage(size: size)
         image.isTemplate = false
@@ -722,9 +768,11 @@ private enum StatusIconFactory {
         NSColor.clear.setFill()
         NSRect(origin: .zero, size: size).fill()
 
-        let fillColor = isExceeded
-            ? NSColor.systemRed
-            : NSColor.systemGreen
+        let fillColor: NSColor = switch level {
+        case .healthy: .systemGreen
+        case .warning: .systemOrange
+        case .critical: .systemRed
+        }
         let leaf = leafPath()
         leaf.append(leafVeinPath())
         leaf.windingRule = .evenOdd
