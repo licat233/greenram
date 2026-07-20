@@ -75,8 +75,9 @@ public enum MemoryHealthEvaluator {
             reasons.append(.systemPressure(pressure))
         }
 
+        // Native Memory Pressure drives the global leaf color. RAM and Swap remain advisory.
         return MemoryHealthEvaluation(
-            // macOS can keep RAM and historical Swap highly utilized while healthy.\n            // The global leaf color therefore follows native Memory Pressure only;\n            // RAM and Swap thresholds remain visible as advisory metric colors.\n            level: pressureLevel,
+            level: pressureLevel,
             ramLevel: ramLevel,
             swapLevel: swapLevel,
             pressureLevel: pressureLevel,
